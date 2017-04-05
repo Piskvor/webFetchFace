@@ -1,6 +1,7 @@
 <?php
 
 use WebFetchFace\DbConnection;
+use WebFetchFace\DownloadStatus;
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'autoloader.php';
 // TODO: refactor
@@ -18,7 +19,26 @@ try {
         foreach (explode("\n", $_REQUEST['urls']) as $url) {
             $url = trim($url);
             echo $url;
-            $sql = 'INSERT INTO files (Url, CreatedAt) VALUES ("' . $url . '", "' . $now . '")';
+            $urlStructure = @parse_url($url);
+            if ($urlStructure === false || !isset($urlStructure['scheme'])) {
+                // URL is seriously borked, do not even try
+                $parsingResult = DownloadStatus::STATUS_INVALID;
+            } else {
+                $scheme = strtolower($urlStructure['scheme']);
+                if ($scheme === 'http' || $scheme === 'https') {
+                    // whitelisted scheme, accept
+                    $parsingResult = DownloadStatus::STATUS_NEW;
+                } else {
+                    // URL is somewhat-valid, but not on our whitelist
+                    $parsingResult = DownloadStatus::STATUS_INVALID;
+                }
+            }
+            $sql = 'INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus) 
+                    VALUES (
+                      "' . $url . '",
+                      "' . $urlStructure['host'] . '",
+                      "' . $now . '",
+                      "' . $parsingResult .'")';
             echo $sql;
             $db->query($sql);
         }
