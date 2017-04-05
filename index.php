@@ -1,16 +1,17 @@
 <?php
 
+use WebFetchFace\DbConnection;
+
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'autoloader.php';
 // TODO: refactor
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+$filesDb = 'downloads.sqlite';
 
 try {
-    //open the database
-    $db = new PDO('sqlite:downloads.sqlite');
 
-    //create the database
-    $db->exec("CREATE TABLE files (Id INTEGER PRIMARY KEY, Url TEXT, CreatedAt DATETIME, DownloadedAt DATETIME, FileStatus INTEGER DEFAULT '0', FileName TEXT)");
+    $db = new DbConnection($filesDb);
 
     if (isset($_REQUEST['do']) && $_REQUEST['do'] === 'add') {
         $now = date('Y-m-d H:i:s');
