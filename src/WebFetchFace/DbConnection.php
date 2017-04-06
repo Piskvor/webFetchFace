@@ -10,8 +10,8 @@ class DbConnection
 
     public function __construct($filename)
     {
-        //open the database
-        $this->db = new \PDO('sqlite:' . basename($filename));
+        $dsn = 'sqlite:' . realpath(basename($filename));
+        $this->db = new \PDO($dsn);
         $this->createTables();
     }
 
@@ -20,15 +20,15 @@ class DbConnection
         return $this->db->query($sql);
     }
 
-    public function exec($string)
+    public function exec($sql)
     {
-        return $this->db->exec($string);
+        return $this->db->exec($sql);
     }
 
     private function createTables()
     {
-        $this->exec("
-          CREATE TABLE files (
+        return $this->exec("
+          CREATE TABLE IF NOT EXISTS files (
             Id INTEGER PRIMARY KEY,
             Url TEXT,
             FileStatus INTEGER DEFAULT '0',
@@ -38,6 +38,7 @@ class DbConnection
             Extractor TEXT,
             ThumbFileName TEXT,
             UrlDomain TEXT,
+            DomainId TEXT,
             CreatedAt DATETIME,
             MetadataDownloadedAt DATETIME,
             QueuedAt DATETIME,
@@ -46,6 +47,16 @@ class DbConnection
             MetadataAttempts INTEGER DEFAULT '0'
           )"
         );
+    }
+
+    public function prepare($string)
+    {
+        return $this->db->prepare($string);
+    }
+
+    public function lastInsertId()
+    {
+        return $this->db->lastInsertId();
     }
 
 }

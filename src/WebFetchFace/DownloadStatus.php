@@ -12,4 +12,29 @@ class DownloadStatus
     const STATUS_DOWNLOADING = 4; // currently being downloaded; go to 5 or fail to 6
     const STATUS_FINISHED = 5; // download finished; DONE
     const STATUS_ERROR = 6; // download error; FAIL
+
+    private static $statusTexts = array(
+        -1 => 'Neplatná adresa',
+        0 => 'Nový',
+        1 => 'Ověřují se data',
+        2 => 'Chyba ověření dat',
+        3 => 'Čeká na stažení',
+        4 => 'Stahuje se',
+        5 => 'Dokončeno',
+        6 => 'Chyba stahování'
+    );
+
+    private static $errors = array(
+        -1 => -1,
+        2 => 2,
+        6 => 6,
+    );
+
+    public static function getTextStatus($status) {
+        return self::$statusTexts[$status];
+    }
+
+    public static function isError($status) {
+        return isset(self::$errors[$status]);
+    }
 }
