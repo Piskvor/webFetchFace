@@ -42,9 +42,12 @@ class DbConnection
             CreatedAt DATETIME,
             MetadataDownloadedAt DATETIME,
             QueuedAt DATETIME,
+            DownloadStartedAt DATETIME,
             DownloadedAt DATETIME,
             DownloadAttempts INTEGER DEFAULT '0',
-            MetadataAttempts INTEGER DEFAULT '0'
+            MetadataAttempts INTEGER DEFAULT '0',
+            DownloaderPid INTEGER,
+            PriorityPercent INT DEFAULT 100 NULL
           )"
         );
     }
