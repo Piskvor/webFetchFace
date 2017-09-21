@@ -67,12 +67,15 @@ for i in $ROWS ; do
     if [ $RESULT -eq 0 ]; then
 
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now') WHERE Id=${ID}"
+	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
 	for sp in $JMA_SP $MAJA_SP; do
 	 curl -q "https://api.simplepush.io/send/$sp/$BN/$MESSAGE"
 	done
 	   continue
 
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=5,DownloaderPid=NULL,DownloadedAt=DATETIME('now') WHERE Id=${ID}"
+	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
+
 
         $(
             FILE_NAME=$(sqlite3 $SQLITE_DB "SELECT Filename FROM files WHERE Id=${ID}")
