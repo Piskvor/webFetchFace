@@ -2,6 +2,9 @@
 
 set -euxo pipefail
 
+JMA_SP="q5tDF"
+MAJA_SP=""
+BN="threepio download"
 trap "exit 1" INT
 
 export DIR_NAME=$(dirname $0)
@@ -9,7 +12,7 @@ cd $DIR_NAME;
 DIR_NAME=$(pwd)
 MY_PID=$$
 export SQLITE_DB=$DIR_NAME/downloads.sqlite
-YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin --skip-unavailable-fragments --add-metadata'
+YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin --skip-unavailable-fragments --add-metadata --limit-rate=2M'
 
 cp $DIR_NAME/downloads.list $DIR_NAME/downloads.tmp.list
 echo -n ''>$DIR_NAME/downloads.list
@@ -21,20 +24,26 @@ sqlite3 $SQLITE_DB "UPDATE files SET DownloaderPid=${MY_PID},FileStatus=3 WHERE 
 cd $DIR_NAME/files
 
 cleanupDeadDownloads () {
-	for dlpid in $(sqlite3 $SQLITE_DB 'SELECT DISTINCT DownloaderPid FROM files WHERE FileStatus=4') ; do
+	PIDS_RUNNING=$(sqlite3 $SQLITE_DB 'SELECT DISTINCT DownloaderPid FROM files WHERE FileStatus in(3,4)'||true)
+	echo $PIDS_RUNNING
+	for dlpid in $PIDS_RUNNING ; do
 		if [ "$dlpid" != "" ]; then
-			$(ps -p "$dlpid")
-			if [ "$?" != 0 ]; then
-				$(sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=904 WHERE DownloaderPid=$dlpid") 
+			PIDS=$(ps --no-headers -p "$dlpid" || true)
+			if [ "$PIDS" = "" ]; then
+				sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=904 WHERE DownloaderPid=$dlpid"
+			else
+				echo "Download running: $PIDS"
 			fi
 		fi
 	done
+	find $DIR_NAME/files -size 0 -delete||true 
+	find $DIR_NAME/tmp -size 0 -delete||true 
 }
 
 cleanupDeadDownloads
 
-ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE DownloaderPid=${MY_PID} AND FileStatus=3 ORDER BY PriorityPercent DESC,Id ASC")
-ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE FileStatus=3 ORDER BY PriorityPercent DESC,Id ASC")
+ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE DownloaderPid=${MY_PID} AND FileStatus=3 ORDER BY PriorityPercent DESC,Id ASC"||true)
+#ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE FileStatus=3 ORDER BY PriorityPercent DESC,Id ASC"||true)
 
 IFS=$'\n'
 for i in $ROWS ; do
@@ -51,13 +60,17 @@ for i in $ROWS ; do
     fi
 
     COMMAND="/home/honza/bin/youtube-dl $YTD_OPTS $OPTS $URL"
-    echo $COMMAND
+    set +e
     eval $COMMAND
-    if [ $? -eq 0 ]; then
+    RESULT=$?
+    set -e
+    if [ $RESULT -eq 0 ]; then
 
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now') WHERE Id=${ID}"
-
-	exit 0
+	for sp in $JMA_SP $MAJA_SP; do
+	 curl -q "https://api.simplepush.io/send/$sp/$BN/$MESSAGE"
+	done
+	   continue
 
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=5,DownloaderPid=NULL,DownloadedAt=DATETIME('now') WHERE Id=${ID}"
 
@@ -75,7 +88,7 @@ for i in $ROWS ; do
         ) &
     else
         sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=904,DownloaderPid=NULL WHERE Id=${ID}"
-
+		exit 2
     fi
 
 done
