@@ -171,6 +171,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 	<script src="jquery.lazy.min.js"></script>
 	<script src="jquery.timeago.js"></script>
 	<script src="jquery.timeago.cs.js"></script>
+	<script async defer src="https://apis.google.com/js/api.js"></script>
 	<script>
 		$(document).ready(function () {
 			var $addBtn = $('#addUrls');
@@ -183,6 +184,14 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 			$addBtn.on('dblclick',function () {
 				return false;
 			});
+			var $ytSearch = $('#ytSearch');
+			$ytSearch.hide(); // TODO: remove
+			$ytSearch.on('click',function () {
+				searchInit();
+				$ytSearch.hide();
+			});
+			$('.ytSearchLoaded').on('submit',function(){search();return false;});
+
 			$('.lazy').Lazy();
 			$('.timeago').timeago();
 		})
@@ -190,20 +199,23 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 	<script>
 		// After the API loads, call a function to enable the search box.
 		function handleAPILoaded() {
-			$('#search-button').attr('disabled', false);
+			$ytsb = $('#yt-search-button');
+			$ytsb.find('.actionButton').html('y');
+			$ytsb.removeAttr('disabled');
 		}
 
 		// Search for a specified string.
 		function search() {
-			var q = $('#query').val();
+			var q = $('#yt-query').val();
 			var request = gapi.client.youtube.search.list({
 				q: q,
 				part: 'snippet'
 			});
 
 			request.execute(function(response) {
+				console.log(response.result);
 				var str = JSON.stringify(response.result);
-				$('#search-container').html('<pre>' + str + '</pre>');
+				$('#yt-search-container').html('<pre>' + str + '</pre>');
 			});
 		}
 
@@ -212,19 +224,14 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 			gapi.client.init({
 				'apiKey': 'AIzaSyDMa_xiWgN_eFahIvIyosslO24RIjS3Sx0'
 			}).then(function() {
-				handleAPILoaded();
+				gapi.client.load('youtube', 'v3', handleAPILoaded);
 			});
 		}
 
 		function searchInit() {
-			var googleApiScript = document.createElement('script');
-
-			googleApiScript.setAttribute('src','https://apis.google.com/js/api.js');
-
-			document.head.appendChild(googleApiScript);
+			$('.ytSearchLoaded').show();
 			// 1. Load the JavaScript client library.
 			gapi.load('client', gapiStart);
-
 		}
 	</script>
 </head>
@@ -247,6 +254,10 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 </form>
 <div class="ytSearchWrapper">
 	<button class="ytSearchOn" id="ytSearch"><span class="actionButton">y</span> Hledat na YT</button>
+	<form class="ytSearchLoaded" style="display: none">
+		<input type="text" id="yt-query"><button id="yt-search-button" disabled="disabled" type="submit"><span class="actionButton">P</span> Hledat</button>
+		<div id="yt-search-container"></div>
+	</form>
 </div>
 
 <?php
