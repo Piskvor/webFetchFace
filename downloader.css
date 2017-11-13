@@ -22,3 +22,7 @@ label {
 	padding: 0.2em;
 	text-decoration: none;
 }
+
+button .actionButton {
+	font-size: 150%;
+}

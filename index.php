@@ -153,6 +153,61 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     <meta charset="utf-8">
     <title>⇩ dl.piskvor.org</title>
 	<link rel="stylesheet" type="text/css" href="downloader.css" />
+	<script src="jquery.js"></script>
+	<script>
+		$(document).ready(function () {
+			var $addBtn = $('#addUrls');
+			$addBtn.on('click',function () {
+				$addBtn.find('.actionButton').html('P');
+				window.setTimeout(function(){
+					$addBtn.attr('disabled','disabled')
+				},50);
+			});
+			$addBtn.on('dblclick',function () {
+				return false;
+			})
+		})
+	</script>
+	<script>
+		// After the API loads, call a function to enable the search box.
+		function handleAPILoaded() {
+			$('#search-button').attr('disabled', false);
+		}
+
+		// Search for a specified string.
+		function search() {
+			var q = $('#query').val();
+			var request = gapi.client.youtube.search.list({
+				q: q,
+				part: 'snippet'
+			});
+
+			request.execute(function(response) {
+				var str = JSON.stringify(response.result);
+				$('#search-container').html('<pre>' + str + '</pre>');
+			});
+		}
+
+		function gapiStart() {
+			// 2. Initialize the JavaScript client library.
+			gapi.client.init({
+				'apiKey': 'AIzaSyDMa_xiWgN_eFahIvIyosslO24RIjS3Sx0'
+			}).then(function() {
+				handleAPILoaded();
+			});
+		}
+
+		function searchInit() {
+			var googleApiScript = document.createElement('script');
+
+			googleApiScript.setAttribute('src','https://apis.google.com/js/api.js');
+
+			document.head.appendChild(googleApiScript);
+			// 1. Load the JavaScript client library.
+			gapi.load('client', gapiStart);
+
+		}
+	</script>
 </head>
 <body>
 
@@ -167,12 +222,13 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
         <label>Výsledek na RPi<input type="checkbox" name="toRPi" value="1" /></label>
     </fieldset>
     -->
-    <input type="submit" value="Přidat soubory"
-           onclick="var that=this;window.setTimeout(function(){that.disabled='disabled'},50)"
-           ondblclick="return false"/>
+    <button type="submit" id="addUrls"><span class="actionButton">+</span> Přidat soubory</button>
     <input type="hidden" name="wakaWakaWaka" value="·····•····· ᗤ ᗣᗣᗣᗣ"/>
     <!-- @Darth Android: https://superuser.com/questions/194195/is-there-a-pac-man-like-character-in-ascii-or-unicode#comment1260666_357916 -->
 </form>
+<div class="ytSearchWrapper">
+	<button class="ytSearchOn" id="ytSearch"><span class="actionButton">y</span> Hledat na YT</button>
+</div>
 
 <?php
 print '<table border=0>';
