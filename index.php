@@ -3,7 +3,7 @@
 use WebFetchFace\DbConnection;
 use WebFetchFace\DownloadStatus;
 
-require_once __DIR__ . DIRECTORY_SEPARATOR . 'apikey.php';
+include_once __DIR__ . DIRECTORY_SEPARATOR . 'apikey.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'functions.php';
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'autoloader.php';
@@ -174,6 +174,9 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 	<script src="jquery.timeago.cs.js"></script>
 	<script async defer src="https://apis.google.com/js/api.js"></script>
 	<script>
+		var apiKey = '<?php if (!empty($apikey)) { echo $apikey; } // defined in apiKey.php ?>';
+		var searchInitRunning = false;
+
 		$(document).ready(function () {
 			var $addBtn = $('#addUrls');
 			$addBtn.on('click',function () {
@@ -182,19 +185,29 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 					$addBtn.attr('disabled','disabled')
 				},50);
 			});
-			$addBtn.on('dblclick',function () {
-				return false;
-			});
 			var $ytSearch = $('#ytSearch');
-			$ytSearch.hide(); // TODO: remove
-			$ytSearch.on('click',function () {
-				searchInit();
+			if (apiKey) {
+				$ytSearch.show();
+				$ytSearch.on('click mouseover', function (e) {
+					if (searchInitRunning) {
+						return;
+					}
+					searchInitRunning = true;
+					$ytsb = $('#yt-search-button');
+					$ytsb.attr('disabled','disabled');
+					searchInit();
+					$ytSearch.hide();
+				});
+			} else {
 				$ytSearch.hide();
-			});
-			$('.ytSearchLoaded').on('submit',function(){search();return false;});
+			}
+			$('.ytSearchLoaded').on('submit',function(e){search();e.preventDefault();return false;});
 
 			$('.lazy').Lazy();
 			$('.timeago').timeago();
+			$('button').on('dblclick',function () {
+				return false;
+			});
 		})
 	</script>
 	<script>
@@ -206,8 +219,11 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		}
 
 		// Search for a specified string.
-		function search() {
-			var q = $('#yt-query').val();
+		function search(e) {
+			var q = $('#yt-query').val().trim();
+			if (!q) {
+				return false;
+			}
 			var request = gapi.client.youtube.search.list({
 				q: q,
 				part: 'snippet'
@@ -223,7 +239,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		function gapiStart() {
 			// 2. Initialize the JavaScript client library.
 			gapi.client.init({
-				'apiKey': '<?php echo $apikey; // defined in apikey.php ?>'
+				'apiKey': apiKey
 			}).then(function() {
 				gapi.client.load('youtube', 'v3', handleAPILoaded);
 			});
@@ -254,7 +270,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     <!-- @Darth Android: https://superuser.com/questions/194195/is-there-a-pac-man-like-character-in-ascii-or-unicode#comment1260666_357916 -->
 </form>
 <div class="ytSearchWrapper">
-	<button class="ytSearchOn" id="ytSearch"><span class="actionButton">y</span> Hledat na YT</button>
+	<button class="ytSearchOn" id="ytSearch" style="display: none"><span class="actionButton">y</span> Hledat na YT</button>
 	<form class="ytSearchLoaded" style="display: none">
 		<input type="text" id="yt-query"><button id="yt-search-button" disabled="disabled" type="submit"><span class="actionButton">P</span> Hledat</button>
 		<div id="yt-search-container"></div>
