@@ -37,6 +37,7 @@ class DbConnection
             Duration INTEGER,
             Extractor TEXT,
             ThumbFileName TEXT,
+            TinyFileName TEXT,
             UrlDomain TEXT,
             DomainId TEXT,
             CreatedAt DATETIME,
