@@ -11,6 +11,64 @@ function dateTag($date, $inputFormat, $machineFormat, $humanFormat) {
 	return '<time class="timeago" datetime="' . $date->format($machineFormat) . '">' . $date->format($humanFormat) . '</time>';
 }
 
+function createThumbnail($image_name,$new_width,$new_height,$uploadDir,$moveToDir,$prefix = '')
+{
+	$path = $uploadDir . '/' . $image_name;
+
+	$mime = getimagesize($path);
+
+	if($mime['mime']=='image/png') {
+		$src_img = imagecreatefrompng($path);
+	}
+	if($mime['mime']=='image/jpg' || $mime['mime']=='image/jpeg' || $mime['mime']=='image/pjpeg') {
+		$src_img = imagecreatefromjpeg($path);
+	}
+
+	$old_x          =   imageSX($src_img);
+	$old_y          =   imageSY($src_img);
+
+	if($old_x > $old_y)
+	{
+		$thumb_w    =   $new_width;
+		$thumb_h    =   $old_y*($new_height/$old_x);
+	}
+
+	if($old_x < $old_y)
+	{
+		$thumb_w    =   $old_x*($new_width/$old_y);
+		$thumb_h    =   $new_height;
+	}
+
+	if($old_x == $old_y)
+	{
+		$thumb_w    =   $new_width;
+		$thumb_h    =   $new_height;
+	}
+
+	$dst_img        =   ImageCreateTrueColor($thumb_w,$thumb_h);
+
+	imagecopyresampled($dst_img,$src_img,0,0,0,0,$thumb_w,$thumb_h,$old_x,$old_y);
+
+
+	// New save location
+	$new_thumb_name = str_replace('.jpg', $prefix . '.jpg', $image_name);
+	$new_thumb_loc = $moveToDir . DIRECTORY_SEPARATOR . $new_thumb_name;
+
+	$result = false;
+
+	if($mime['mime']=='image/png') {
+		$result = imagepng($dst_img,$new_thumb_loc,8);
+	}
+	if($mime['mime']=='image/jpg' || $mime['mime']=='image/jpeg' || $mime['mime']=='image/pjpeg') {
+		$result = imagejpeg($dst_img,$new_thumb_loc,80);
+	}
+
+	imagedestroy($dst_img);
+	imagedestroy($src_img);
+
+	return $result ? $new_thumb_loc : null;
+}
+
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'autoloader.php';
 // TODO: refactor
 ini_set('display_errors', 1);
@@ -36,7 +94,6 @@ $prepFindUrl = $db->prepare('SELECT Id,FileStatus FROM files WHERE Url=? AND Fil
 $prepStatus = $db->prepare('UPDATE files SET FileStatus=? WHERE Id=?');
 $prepAttempts = $db->prepare('UPDATE files SET DownloadAttempts=DownloadAttempts+1 WHERE Id=?');
 $prepMetadataAttempts = $db->prepare('UPDATE files SET FileStatus=?, MetadataAttempts=MetadataAttempts+1 WHERE Id=?');
-$prepStatusJson = $db->prepare('UPDATE files SET FileStatus=?, FileName=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?');
 
 if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     $requestId = null;
@@ -122,11 +179,13 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
                         if (!preg_match('/\.jpg$/', $thumbFileName)) {
                             $thumbFileName .= '.jpg';
                         }
-                        $thumbPath = $relDir . DIRECTORY_SEPARATOR . $host . DIRECTORY_SEPARATOR . $thumbFileName;
-                        $prepStatusJson->execute(array(DownloadStatus::STATUS_QUEUED, $jsonData['_filename'], $jsonData['title'], $jsonData['duration'], $jsonData['extractor'], $thumbPath, $jsonData['id'], $now, $now, $id));
+                        $thumbPath = $relDir . DIRECTORY_SEPARATOR . $host;
+                        $thumbFilePath =  $thumbPath . DIRECTORY_SEPARATOR . $thumbFileName;
+						$prepStatusJson = $db->prepare('UPDATE files SET FileStatus=?, FileName=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?');
+                        $prepStatusJson->execute(array(DownloadStatus::STATUS_QUEUED, $jsonData['_filename'], $jsonData['title'], $jsonData['duration'], $jsonData['extractor'], $thumbFilePath, $jsonData['id'], $now, $now, $id));
 
-                        if (!empty($jsonData['thumbnail']) && !file_exists($thumbPath)) {
-                            $DLFile = $thumbPath;
+                        if (!empty($jsonData['thumbnail']) && !file_exists($thumbFilePath)) {
+                            $DLFile = $thumbFilePath;
                             $DLURL = $jsonData['thumbnail'];
                             $fp = fopen($DLFile, 'wb+');
                             $ch = curl_init($DLURL);
@@ -136,6 +195,12 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
                             curl_close($ch);
                             fclose($fp);
                             chmod($DLFile, 0664);
+
+                            $tinyFilename = createThumbnail($thumbFileName,200, 200, $thumbPath, $thumbPath, '_tiny');
+							if ($tinyFilename) {
+								$prepThumbnail = $db->prepare('UPDATE files SET ThumbFileName=? WHERE Id=?');
+								$prepThumbnail->execute(array($tinyFilename, $id));
+							}
                         }
                     } else {
                         $prepStatus->execute(array(DownloadStatus::STATUS_METADATA_ERROR, $id));
@@ -249,7 +314,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 
 <?php
 print '<table border=0>';
-print "<tr><th>Jméno</th><th>Náhled</th><th>Stav</th><th>Datum</th><th></th></tr>";
+print "<tr><th>Náhled</th><th>Jméno</th><th>Stav</th><th>Datum</th><th></th></tr>";
 $result = $db->query('SELECT * FROM files WHERE FileStatus != ' . DownloadStatus::STATUS_DISCARDED . ' ORDER BY FileStatus = ' . DownloadStatus::STATUS_DOWNLOADING . ' DESC, FileStatus = ' . DownloadStatus::STATUS_FINISHED . ' ASC,PriorityPercent DESC,CreatedAt DESC,DownloadedAt DESC');
 
 $changedFiles = 0;
@@ -260,7 +325,13 @@ foreach ($result as $row) {
         $changedFiles++;
     }
 
-    print '<tr><td>';
+    print '<tr>';
+	print '<td class="rowThumb">';
+	if ($row['ThumbFileName'] && !$noImage) {
+		print '<img style="max-width: 200px" class="lazy" data-src="' . $row['ThumbFileName'] . '" />';
+	}
+	print '</td>';
+    print '<td class="rowTitle">';
     if (!DownloadStatus::isError($row['FileStatus'])) {
         print '<a href="' . $row['Url'] . '">' . $row['Title'] . '</a>';
     } else {
@@ -269,26 +340,23 @@ foreach ($result as $row) {
         }
         print $row['Url'];
     }
-    print '</td><td>';
-    if ($row['ThumbFileName'] && !$noImage) {
-        print '<img style="max-width: 200px" class="lazy" data-src="' . $row['ThumbFileName'] . '" />';
-    }
-    print '</td><td';
+    print '</td>';
+	print '<td class="rowStatus';
     if (DownloadStatus::isError($row['FileStatus'])) {
-        print ' class="isError"';
+        print ' isError';
     }
-    print ' title="' . $row['FileStatus'] .'"';
+    print '" title="' . $row['FileStatus'] .'"';
     print ' data-filestatus="' . $row['FileStatus'] .'"';
     print '>';
     print DownloadStatus::getTextStatus($row['FileStatus']) . '</td>';
 
-    print '<td>';
+    print '<td class="rowDate">';
 
     print dateTag($row['DownloadedAt'] ? $row['DownloadedAt'] : $row['CreatedAt'], $sqlDate, $isoDate, $humanDate);
 
     print '</td>';
 
-    print '<td>';
+    print '<td  class="rowActions">';
 
     if (DownloadStatus::isError($row['FileStatus'])) { // || $row['FileStatus'] == DownloadStatus::STATUS_FINISHED) {
         echo "<a class='actionButton' href='?do=delete&id=" . $row['Id'] . "' title='Vyřadit z fronty' onclick='return confirm(\"Opravdu vyřadit z fronty?\")'>\\</a>";
