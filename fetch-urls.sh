@@ -18,7 +18,7 @@ cp $DIR_NAME/downloads.list $DIR_NAME/downloads.tmp.list
 echo -n ''>$DIR_NAME/downloads.list
 
 cd $DIR_NAME
-sqlite3 $SQLITE_DB "UPDATE files SET DownloaderPid=${MY_PID},FileStatus=3 WHERE FileStatus=2"
+sqlite3 $SQLITE_DB "UPDATE files SET DownloaderPid=${MY_PID},FileStatus=3 WHERE FileStatus=2 OR (FileStatus=3 and DownloaderPid IS NULL)"
  #AND DownloaderPid IS NULL"
 
 cd $DIR_NAME/files
@@ -30,7 +30,8 @@ cleanupDeadDownloads () {
 		if [ "$dlpid" != "" ]; then
 			PIDS=$(ps --no-headers -p "$dlpid" || true)
 			if [ "$PIDS" = "" ]; then
-				sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=904 WHERE DownloaderPid=$dlpid"
+				sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=904 WHERE DownloaderPid=$dlpid and FileStatus=4"
+				sqlite3 $SQLITE_DB "UPDATE files SET DownloaderPid=NULL WHERE DownloaderPid=$dlpid and FileStatus in (3,4)"
 			else
 				echo "Download running: $PIDS"
 			fi
@@ -53,7 +54,7 @@ for i in $ROWS ; do
 #echo $URL;continue
     sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=4,DownloadStartedAt=DATETIME('now'),DownloadAttempts=DownloadAttempts+1 WHERE Id=${ID}"
 
-    IS_CT=$(echo $URL | grep -c ceskatelevize.cz)
+    IS_CT=$(echo $URL | grep -c ceskatelevize.cz || true)
     OPTS=""
     if [ "$IS_CT" -gt 0 ]; then
         OPTS="-f best"
@@ -67,10 +68,14 @@ for i in $ROWS ; do
     if [ $RESULT -eq 0 ]; then
 
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now') WHERE Id=${ID}"
+
+	   continue
+
 	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
 	for sp in $JMA_SP $MAJA_SP; do
 	 curl -q "https://api.simplepush.io/send/$sp/$BN/$MESSAGE"
 	done
+
 	   continue
 
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=5,DownloaderPid=NULL,DownloadedAt=DATETIME('now') WHERE Id=${ID}"
@@ -95,4 +100,4 @@ for i in $ROWS ; do
     fi
 
 done
-
+exit 0
