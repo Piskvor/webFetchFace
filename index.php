@@ -3,6 +3,14 @@
 use WebFetchFace\DbConnection;
 use WebFetchFace\DownloadStatus;
 
+function dateTag($date, $inputFormat, $machineFormat, $humanFormat) {
+	if (!$date) {
+		return '';
+	}
+	$date = date_create_from_format($inputFormat, $date);
+	return '<time class="timeago" datetime="' . $date->format($machineFormat) . '">' . $date->format($humanFormat) . '</time>';
+}
+
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'autoloader.php';
 // TODO: refactor
 ini_set('display_errors', 1);
@@ -12,6 +20,10 @@ $filesDb = 'downloads.sqlite';
 $ytd = '/home/honza/bin/youtube-dl --restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin';
 $relDir = 'tmp';
 $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
+
+$sqlDate = 'Y-m-d H:i:s';
+$isoDate = 'c';
+$humanDate = 'j.n.Y H:i:s';
 
 $noImage = isset($_REQUEST['noImage']);
 $isScript = isset($_REQUEST['isScript']);
@@ -36,7 +48,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     }
     $action = $_REQUEST['do'];
     if ($action === 'add') {
-        $now = date('Y-m-d H:i:s');
+        $now = date($sqlDate);
 
         $prepNew = $db->prepare('INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus) VALUES (?,?,?,?)');
         foreach (explode("\n", $_REQUEST['urls']) as $url) {
@@ -102,7 +114,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
                 if ($ytdResult === 0) {
                     $jsonData = json_decode(file_get_contents($jsonFilename), true, 20);
                     if (count($jsonData) > 0) {
-                        $now = date('Y-m-d H:i:s');
+                        $now = date($sqlDate);
                         $thumbFileName = preg_replace(
                             '/.jpe?g$/i', '.jpg',
                             preg_replace('/[^A-Za-z0-9_-]/', '_', $id . '_' . $jsonData['id'] . '_' . basename($jsonData['thumbnail']))
@@ -155,6 +167,8 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 	<link rel="stylesheet" type="text/css" href="downloader.css" />
 	<script src="jquery.js"></script>
 	<script src="jquery.lazy.min.js"></script>
+	<script src="jquery.timeago.js"></script>
+	<script src="jquery.timeago.cs.js"></script>
 	<script>
 		$(document).ready(function () {
 			var $addBtn = $('#addUrls');
@@ -168,6 +182,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 				return false;
 			});
 			$('.lazy').Lazy();
+			$('.timeago').timeago();
 		})
 	</script>
 	<script>
@@ -234,7 +249,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 
 <?php
 print '<table border=0>';
-print "<tr><th>Jméno</th><th>Náhled</th><th>Stav</th><th>Přidáno</th><th>Staženo</th><th></th></tr>";
+print "<tr><th>Jméno</th><th>Náhled</th><th>Stav</th><th>Datum</th><th></th></tr>";
 $result = $db->query('SELECT * FROM files WHERE FileStatus != ' . DownloadStatus::STATUS_DISCARDED . ' ORDER BY FileStatus = ' . DownloadStatus::STATUS_DOWNLOADING . ' DESC, FileStatus = ' . DownloadStatus::STATUS_FINISHED . ' ASC,PriorityPercent DESC,CreatedAt DESC,DownloadedAt DESC');
 
 $changedFiles = 0;
@@ -269,10 +284,8 @@ foreach ($result as $row) {
 
     print '<td>';
 
-    print $row['CreatedAt'];
+    print dateTag($row['DownloadedAt'] ? $row['DownloadedAt'] : $row['CreatedAt'], $sqlDate, $isoDate, $humanDate);
 
-    print '</td><td>';
-    print $row['DownloadedAt'];
     print '</td>';
 
     print '<td>';
