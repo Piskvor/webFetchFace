@@ -27,6 +27,8 @@ $result = $db->query('SELECT * FROM files WHERE TinyFileName IS NULL AND FileSta
 
 $changedFiles = 0;
 $toDownload = array();
+$thumbnailWidth = 120;
+
 
 $prepThumbnail = $db->prepare('UPDATE files SET TinyFileName=? WHERE Id=?');
 
@@ -41,7 +43,7 @@ foreach ($result as $row) {
 		continue;
 	}
 
-	$tinyFilename = createThumbnail($thumbFileName,200, 200, $thumbPath, $thumbPath, '_tiny');
+	$tinyFilename = createThumbnail($thumbFileName,$thumbnailWidth, $thumbnailWidth, $thumbPath, $thumbPath, '_tiny');
 	if ($tinyFilename) {
 		$prepThumbnail->execute(array($tinyFilename, $id));
 		chmod($tinyFilename, 0664);

@@ -16,6 +16,7 @@ $ytd = '/home/honza/bin/youtube-dl --restrict-filenames --prefer-ffmpeg --ffmpeg
 $relDir = 'tmp';
 $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
+$thumbnailWidth = 120;
 $sqlDate = 'Y-m-d H:i:s';
 $isoDate = 'c';
 $humanDate = 'j.n.Y H:i:s';
@@ -133,7 +134,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
                             fclose($fp);
                             chmod($DLFile, 0664);
 
-                            $tinyFilename = createThumbnail($thumbFileName,200, 200, $thumbPath, $thumbPath, '_tiny');
+                            $tinyFilename = createThumbnail($thumbFileName,$thumbnailWidth, $thumbnailWidth, $thumbPath, $thumbPath, '_tiny');
 							if ($tinyFilename) {
 								$prepThumbnail = $db->prepare('UPDATE files SET TinyFileName=? WHERE Id=?');
 								$prepThumbnail->execute(array($tinyFilename, $id));
@@ -300,7 +301,7 @@ foreach ($result as $row) {
 		}
 	}
 	if ($image) {
-		print '<img style="max-width: 200px" class="lazy" data-src="' . $image . '" />';
+		print '<img style="max-width: ' . $thumbnailWidth . 'px" class="lazy" data-src="' . $image . '" />';
 	}
 	print '</td>';
     print '<td class="rowTitle">';
