@@ -3,6 +3,7 @@
 use WebFetchFace\DbConnection;
 use WebFetchFace\DownloadStatus;
 
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'apikey.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'functions.php';
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'autoloader.php';
@@ -222,7 +223,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		function gapiStart() {
 			// 2. Initialize the JavaScript client library.
 			gapi.client.init({
-				'apiKey': 'AIzaSyDMa_xiWgN_eFahIvIyosslO24RIjS3Sx0'
+				'apiKey': '<?php echo $apikey; // defined in apikey.php ?>'
 			}).then(function() {
 				gapi.client.load('youtube', 'v3', handleAPILoaded);
 			});
