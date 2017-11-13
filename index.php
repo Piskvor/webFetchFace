@@ -151,34 +151,8 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 <html>
 <head>
     <meta charset="utf-8">
-    <title>dl.piskvor.org</title>
-    <!--suppress CssUnusedSymbol -->
-    <style>
-        .isError {
-            color: maroon;
-        }
-
-        label {
-            display: block;
-        }
-
-        @font-face {
-            font-family: 'Web Symbols';
-            src: url('font/WebSymbols-Regular.eot');
-            src: url('font/WebSymbols-Regular.eot?#iefix') format('embedded-opentype'),
-            url('font/WebSymbols-Regular.woff') format('woff'),
-            url('font/WebSymbols-Regular.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-
-        /*noinspection CssNoGenericFontName*/
-        .actionButton {
-            font-family: 'Web Symbols';
-            padding: 0.2em;
-            text-decoration: none;
-        }
-    </style>
+    <title>⇩ dl.piskvor.org</title>
+	<link rel="stylesheet" type="text/css" href="downloader.css" />
 </head>
 <body>
 
@@ -194,7 +168,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     </fieldset>
     -->
     <input type="submit" value="Přidat soubory"
-           onclick="var that=this;window.setTimeout(function(){that.disabled='disabled'},100)"
+           onclick="var that=this;window.setTimeout(function(){that.disabled='disabled'},50)"
            ondblclick="return false"/>
     <input type="hidden" name="wakaWakaWaka" value="·····•····· ᗤ ᗣᗣᗣᗣ"/>
     <!-- @Darth Android: https://superuser.com/questions/194195/is-there-a-pac-man-like-character-in-ascii-or-unicode#comment1260666_357916 -->
@@ -248,9 +222,9 @@ foreach ($result as $row) {
     if (DownloadStatus::isError($row['FileStatus'])) { // || $row['FileStatus'] == DownloadStatus::STATUS_FINISHED) {
         echo "<a class='actionButton' href='?do=delete&id=" . $row['Id'] . "' title='Vyřadit z fronty' onclick='return confirm(\"Opravdu vyřadit z fronty?\")'>\\</a>";
 
-        if (DownloadStatus::isError($row['FileStatus'])) {
+//        if (DownloadStatus::isError($row['FileStatus'])) {
             echo "<a class='actionButton' href='?do=retry&id=" . $row['Id'] . "' title='Zkusit znovu' onclick='return confirm(\"Opravdu zkusit znovu?\")'>J</a>";
-        }
+//        }
     }
     print '</td></tr>';
 
