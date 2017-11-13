@@ -154,6 +154,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     <title>⇩ dl.piskvor.org</title>
 	<link rel="stylesheet" type="text/css" href="downloader.css" />
 	<script src="jquery.js"></script>
+	<script src="jquery.lazy.min.js"></script>
 	<script>
 		$(document).ready(function () {
 			var $addBtn = $('#addUrls');
@@ -165,7 +166,8 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 			});
 			$addBtn.on('dblclick',function () {
 				return false;
-			})
+			});
+			$('.lazy').Lazy();
 		})
 	</script>
 	<script>
@@ -254,7 +256,7 @@ foreach ($result as $row) {
     }
     print '</td><td>';
     if ($row['ThumbFileName'] && !$noImage) {
-        print '<img style="max-width: 200px" src="' . $row['ThumbFileName'] . '" />';
+        print '<img style="max-width: 200px" class="lazy" data-src="' . $row['ThumbFileName'] . '" />';
     }
     print '</td><td';
     if (DownloadStatus::isError($row['FileStatus'])) {
