@@ -13,6 +13,9 @@ $ytd = '/home/honza/bin/youtube-dl --restrict-filenames --prefer-ffmpeg --ffmpeg
 $relDir = 'tmp';
 $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
+$noImage = isset($_REQUEST['noImage']);
+$isScript = isset($_REQUEST['isScript']);
+
 try {
 
 $db = new DbConnection($filesDb);
@@ -135,7 +138,12 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     } else if ($action === 'retry' && $requestId) {
         $prepStatus->execute(array(DownloadStatus::STATUS_QUEUED, $requestId));
     }
-    header('Location: ?do=list');
+    if ($isScript) {
+		header("Content-Type: application/json");
+		echo '{result: "OK"}';
+	} else {
+		header('Location: ?do=list');
+	}	
     exit;
 }
 
@@ -215,7 +223,7 @@ foreach ($result as $row) {
         print $row['Url'];
     }
     print '</td><td>';
-    if ($row['ThumbFileName']) {
+    if ($row['ThumbFileName'] && !$noImage) {
         print '<img style="max-width: 200px" src="' . $row['ThumbFileName'] . '" />';
     }
     print '</td><td';
