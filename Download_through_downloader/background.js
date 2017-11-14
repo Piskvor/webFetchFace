@@ -67,7 +67,7 @@ function notyf_setup_inpage() {
 					return Notyf
 				}) : "undefined" != typeof module && module.exports ? module.exports = Notyf : window.Notyf = Notyf
 			}();
-			window.notyf_iggwrurefj = new Notyf();
+			window.notyf_iggwrurefj = new Notyf({delay: 10000});
 		}
 }
 
@@ -83,12 +83,24 @@ function xhr_call_inpage_result(event,notyf,requestedUrl) {
 	if(!event.target) {
 		notyf.alert("Nepodařilo se zařadit do fronty: " + requestedUrl);
 	} else if (event.target.readyState === 4) {
-		console.log(event);
-		console.log(notyf);
-		console.log(requestedUrl);
 		try {
 			var response = JSON.parse(event.target.responseText);
-			console.log(response);
+			// console.log(response);
+			if (response.added > 0) {
+				for (var c=0;c < response.addedTitles.length; c++) {
+					notyf.confirm("Přidáno: " + response.addedTitles[c]);
+				}
+			}
+			if (response.skipped > 0) {
+				for (var d=0;d < response.skippedUrls.length; d++) {
+					notyf.confirm("Už je ve frontě: " + response.skippedUrls[d]);
+				}
+			}
+			if (response.errors > 0) {
+				for (var f=0;f < response.errorsUrls.length; f++) {
+					notyf.alert("Chyba: " + response.errorsUrls[f]);
+				}
+			}
 		} catch (error) {
 			notyf.alert("Nepodařilo se zařadit do fronty: " + requestedUrl);
 		}

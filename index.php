@@ -41,12 +41,13 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
         }
     }
     $action = $_REQUEST['do'];
+	$titleAdded = array();
+	$urlAdded = array();
+	$urlSkipped = array();
+	$urlErrors = array();
     if ($action === 'add') {
         $now = date($sqlDate);
 
-        $titleAdded = array();
-        $urlAdded = array();
-        $urlSkipped = array();
         $prepNew = $db->prepare('INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus) VALUES (?,?,?,?)');
         foreach (explode("\n", $_REQUEST['urls']) as $url) {
             $url = trim($url);
@@ -100,7 +101,8 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
             $id = $db->lastInsertId();
 
             if (!$id) {
-                die('Insert error: ' . $url);
+				$urlSkipped[] = $url;
+				continue;
             }
             $jsonFilename = $dir . DIRECTORY_SEPARATOR . $id . '.json';
             if ($parsingResult === DownloadStatus::STATUS_NEW) {
@@ -148,9 +150,11 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
                         }
                     } else {
                         $prepStatus->execute(array(DownloadStatus::STATUS_METADATA_ERROR, $id));
+						$urlErrors[] = $url;
                     }
                 } else {
                     $prepStatus->execute(array(DownloadStatus::STATUS_METADATA_ERROR, $id));
+					$urlErrors[] = $url;
                 }
             }
         }
@@ -165,14 +169,12 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 				'result' => 'OK'
 		);
 		$result['added'] = count($titleAdded);
-		if (!empty($titleAdded)) {
-			$result['addedTitles'] = $titleAdded;
-			$result['addedUrls'] = $urlAdded;
-		}
+		$result['addedTitles'] = $titleAdded;
+		$result['addedUrls'] = $urlAdded;
 		$result['skipped'] = count($urlSkipped);
-		if (!empty($urlSkipped)) {
-			$result['skippedUrls'] = $urlSkipped;
-		}
+		$result['skippedUrls'] = $urlSkipped;
+		$result['errors'] = count($urlErrors);
+		$result['errorsUrls'] = $urlErrors;
 		echo json_encode($result);
 	} else {
 		header('Location: ?do=list');
