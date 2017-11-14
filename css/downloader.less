@@ -16,11 +16,23 @@ label {
 	font-style: normal;
 }
 
-/*noinspection CssNoGenericFontName*/
+//noinspection CssNoGenericFontName
 .actionButton {
 	font-family: 'Web Symbols';
 	padding: 0.2em;
 	text-decoration: none;
+}
+
+.button-wait::before {
+  content: 'P';
+}
+
+.button-add::before {
+  content: '+';
+}
+
+.button-youtube::before {
+  content: 'y';
 }
 
 button .actionButton {

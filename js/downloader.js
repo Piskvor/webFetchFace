@@ -1,7 +1,8 @@
 $(document).ready(function () {
 	var $addBtn = $('#addUrls');
 	$addBtn.on('click',function () {
-		$addBtn.find('.actionButton').html('P');
+		$addBtn.find('.actionButton').removeClass('button-youtube');
+		$addBtn.find('.actionButton').addClass('button-wait');
 		window.setTimeout(function(){
 			$addBtn.attr('disabled','disabled')
 		},50);
@@ -34,7 +35,7 @@ $(document).ready(function () {
 // After the API loads, call a function to enable the search box.
 function enableYtSearchUi() {
 	$ytsb = $('#yt-search-button');
-	$ytsb.find('.actionButton').html('y');
+	$ytsb.find('.actionButton').addClass('button-youtube');
 	$ytsb.removeAttr('disabled');
 }
 

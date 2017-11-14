@@ -200,14 +200,14 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
         <label>Výsledek na RPi<input type="checkbox" name="toRPi" value="1" /></label>
     </fieldset>
     -->
-    <button type="submit" id="addUrls"><span class="actionButton">+</span> Přidat soubory</button>
+    <button type="submit" id="addUrls"><span class="actionButton button-add"></span> Přidat soubory</button>
     <input type="hidden" name="wakaWakaWaka" value="·····•····· ᗤ ᗣᗣᗣᗣ"/>
     <!-- @Darth Android: https://superuser.com/questions/194195/is-there-a-pac-man-like-character-in-ascii-or-unicode#comment1260666_357916 -->
 </form>
 <div class="ytSearchWrapper">
-	<button class="ytSearchOn" id="ytSearch" style="display: none"><span class="actionButton">y</span> Hledat na YT</button>
+	<button class="ytSearchOn" id="ytSearch" style="display: none"><span class="actionButton button-youtube"></span> Hledat na YT</button>
 	<form class="ytSearchLoaded" style="display: none">
-		<input type="text" id="yt-query" title="název videa"><button id="yt-search-button" disabled="disabled" type="submit"><span class="actionButton">P</span> Hledat</button>
+		<input type="text" id="yt-query" title="název videa"><button id="yt-search-button" disabled="disabled" type="submit"><span class="actionButton button-wait"></span> Hledat</button>
 		<div id="yt-search-container"></div>
 	</form>
 </div>
