@@ -229,7 +229,7 @@ foreach ($result as $row) {
 			'preview-image'
 		);
 		print '<a href="' . $row['ThumbFileName'] .'" data-featherlight="image"><img'; //style="max-width: ' . $thumbnailWidth . 'px"';
-		if ($rowCounter < 16) { // load first ones directly
+		if ($rowCounter < 10) { // load first ones directly
 			print ' src="';
 		} else {
 			print ' data-src="';
