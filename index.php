@@ -208,13 +208,13 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 	<button class="ytSearchOn" id="ytSearch" style="display: none"><span class="actionButton button-youtube"></span> Hledat na YT</button>
 	<form class="ytSearchLoaded" style="display: none">
 		<input type="text" id="yt-query" title="název videa"><button id="yt-search-button" disabled="disabled" type="submit"><span class="actionButton button-wait"></span> Hledat</button>
-		<div id="yt-search-container"></div>
+		<ul id="yt-search-container"></ul>
 	</form>
 </div>
 <div id="lightbox"></div>
 
 <?php
-print '<table border=0>';
+print '<table class="queue-list" border=0>';
 print "<tr><th>Náhled</th><th>Jméno</th><th>Stav</th><th>Datum</th><th></th></tr>\n\n";
 $result = $db->query('SELECT * FROM files WHERE FileStatus != ' . DownloadStatus::STATUS_DISCARDED . ' ORDER BY FileStatus = ' . DownloadStatus::STATUS_DOWNLOADING . ' DESC, FileStatus = ' . DownloadStatus::STATUS_FINISHED . ' ASC,PriorityPercent DESC,CreatedAt DESC,DownloadedAt DESC');
 
@@ -277,12 +277,12 @@ foreach ($result as $row) {
 
     print '<td class="rowActions">';
 
-    if (DownloadStatus::isError($row['FileStatus'])) { // || $row['FileStatus'] == DownloadStatus::STATUS_FINISHED) {
+    if ($row['FileStatus'] == DownloadStatus::STATUS_QUEUED || DownloadStatus::isError($row['FileStatus'])) {
         echo "<a class='actionButton' href='?do=delete&id=" . $row['Id'] . "' title='Vyřadit z fronty' onclick='return confirm(\"Opravdu vyřadit z fronty?\")'>\\</a>";
 
-//        if (DownloadStatus::isError($row['FileStatus'])) {
+        if (DownloadStatus::isError($row['FileStatus'])) {
             echo "<a class='actionButton' href='?do=retry&id=" . $row['Id'] . "' title='Zkusit znovu' onclick='return confirm(\"Opravdu zkusit znovu?\")'>J</a>";
-//        }
+        }
     }
     print "</td></tr>\n\n";
 

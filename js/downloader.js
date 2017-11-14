@@ -14,11 +14,7 @@ $(document).ready(function () {
 			if (searchInitRunning) {
 				return; // do not preventDefault!
 			}
-			searchInitRunning = true;
-			$ytsb = $('#yt-search-button');
-			$ytsb.attr('disabled','disabled');
 			searchInit();
-			$ytSearch.hide();
 		});
 	} else {
 		$ytSearch.hide();
@@ -30,6 +26,7 @@ $(document).ready(function () {
 	$('button').on('dblclick',function () {
 		return false;
 	});
+	searchInit();
 });
 
 // After the API loads, call a function to enable the search box.
@@ -39,23 +36,53 @@ function enableYtSearchUi() {
 	$ytsb.removeAttr('disabled');
 }
 
+var searchQueued = null;
 // Search for a specified string.
-function search(e) {
+function search(e)
+{
 	var q = $('#yt-query').val().trim();
 	if (!q) {
 		e.preventDefault();
 		return false;
 	}
+
+	searchQueued = q; // note that we're only keeping the last one
+	if (searchUsable) {
+		searchUsableCallback(q);
+	}
+}
+function searchUsableCallback(q) {
+	searchQueued = null;
 	var request = gapi.client.youtube.search.list({
 		q: q,
 		part: 'snippet'
 	});
 
-	request.execute(function(response) {
-		console.log(response.result);
-		var str = JSON.stringify(response.result);
-		$('#yt-search-container').html('<pre>' + str + '</pre>');
-	});
+	request.execute(searchCompletedCallback);
+}
+
+function searchCompletedCallback(response) {
+
+	var $ytsc = $('#yt-search-container');
+
+	var items = response.items || [];
+	if (items.length > 0) {
+		$ytsc.empty();
+		for (var c=0; c < items.length; c++) {
+			var item = items[c];
+			console.log(item);
+			if (item.id.kind === "youtube#video") {
+				$ytsc.append('<li><a href="https://youtu.be/'+ item.id.videoId + '">'
+					+ '<img class="yt-thumbnail" src="'+ item.snippet.thumbnails.default.url + '"></a>'
+					+ '<div class="yt-texts"><div><a class="yt-found-item" href="?do=add&urls=' + encodeURIComponent('https://youtu.be/'+ item.id.videoId) + '" data-video-url="https://youtu.be/'+ item.id.videoId + '">'+ item.snippet.title
+					+ '</a></div><div class="yt-description">'+ item.snippet.description
+					+ '</div></div></li>');
+			}
+		}
+	}
+
+	var str = JSON.stringify(response.result);
+//	$('#yt-search-container').html('<pre>' + str + '</pre>');
 }
 
 function gapiStart() {
@@ -66,11 +93,16 @@ function gapiStart() {
 		gapi.client.load('youtube', 'v3', function(){
 			enableYtSearchUi();
 			searchUsable = true;
+			if (searchQueued) {
+				searchUsableCallback(searchQueued);
+			}
 		});
 	});
 }
 
 function searchInit() {
+	searchInitRunning = true;
+	$('#ytSearch').hide();
 	$('.ytSearchLoaded').show();
 	enableYtSearchUi();
 	// 1. Load the JavaScript client library.

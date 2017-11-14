@@ -48,11 +48,37 @@ button .actionButton {
 
 .ytSearchWrapper {
   min-height: 3em;
+  max-width: 50em;
   input {
 	font-size: 150%;
 	min-width: 20%;
 	margin-right: 1em;
   }
+  li {
+	list-style-type: none;
+	padding: 1em;
+	clear: both;
+	a {
+	  margin-right: 1em;
+	  vertical-align: top;
+	}
+	.yt-thumbnail {
+	  float: left;
+	}
+	.yt-description {
+	  max-height: 3em;
+	  overflow:hidden;
+	}
+	.yt-texts > * {
+	  padding-left: 1em;
+	}
+  }
+}
+
+.queue-list {
+  clear: both;
+  border: 0;
+  padding-top: 2em;
 }
 
 @import (inline) "featherlight.min.css";
