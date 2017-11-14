@@ -1,4 +1,4 @@
 downloads*
 files
 tmp/*
-apikey.php
+include/apikey.php

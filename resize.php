@@ -3,7 +3,7 @@
 use WebFetchFace\DbConnection;
 use WebFetchFace\DownloadStatus;
 
-require_once __DIR__ . DIRECTORY_SEPARATOR . 'functions.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'include' . DIRECTORY_SEPARATOR . 'functions.php';
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'autoloader.php';
 

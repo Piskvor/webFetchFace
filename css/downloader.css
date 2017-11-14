@@ -8,10 +8,10 @@ label {
 
 @font-face {
 	font-family: 'Web Symbols';
-	src: url('font/WebSymbols-Regular.eot');
-	src: url('font/WebSymbols-Regular.eot?#iefix') format('embedded-opentype'),
-	url('font/WebSymbols-Regular.woff') format('woff'),
-	url('font/WebSymbols-Regular.ttf') format('truetype');
+	src: url('../font/WebSymbols-Regular.eot');
+	src: url('../font/WebSymbols-Regular.eot?#iefix') format('embedded-opentype'),
+	url('../font/WebSymbols-Regular.woff') format('woff'),
+	url('../font/WebSymbols-Regular.ttf') format('truetype');
 	font-weight: normal;
 	font-style: normal;
 }
