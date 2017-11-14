@@ -55,13 +55,14 @@ function searchUsableCallback(q) {
 	searchQueued = null;
 	var request = gapi.client.youtube.search.list({
 		q: q,
+		maxResults: 10,
 		part: 'snippet'
 	});
 
-	request.execute(searchCompletedCallback);
+	request.execute(function(response){searchCompletedCallback(response,q)});
 }
 
-function searchCompletedCallback(response) {
+function searchCompletedCallback(response,q) {
 
 	var $ytsc = $('#yt-search-container');
 
@@ -70,15 +71,15 @@ function searchCompletedCallback(response) {
 		$ytsc.empty();
 		for (var c=0; c < items.length; c++) {
 			var item = items[c];
-			console.log(item);
 			if (item.id.kind === "youtube#video") {
-				$ytsc.append('<li><a href="https://youtu.be/'+ item.id.videoId + '">'
+				$ytsc.append('<li><a href="https://youtu.be/'+ item.id.videoId + '" target="_blank" rel="noopener noreferrer">'
 					+ '<img class="yt-thumbnail" src="'+ item.snippet.thumbnails.default.url + '"></a>'
 					+ '<div class="yt-texts"><div><a class="yt-found-item" href="?do=add&urls=' + encodeURIComponent('https://youtu.be/'+ item.id.videoId) + '" data-video-url="https://youtu.be/'+ item.id.videoId + '">'+ item.snippet.title
 					+ '</a></div><div class="yt-description">'+ item.snippet.description
 					+ '</div></div></li>');
 			}
 		}
+		$ytsc.append('<li><a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener noreferrer">Další výsledky z <span class="actionButton button-youtube" title="YouTube"></span> (přibližně ' + response.result.pageInfo.totalResults + ')</a></li>');
 	}
 
 	var str = JSON.stringify(response.result);
