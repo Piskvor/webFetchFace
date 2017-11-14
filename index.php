@@ -202,7 +202,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 
 <?php
 print '<table border=0>';
-print "<tr><th>Náhled</th><th>Jméno</th><th>Stav</th><th>Datum</th><th></th></tr>";
+print "<tr><th>Náhled</th><th>Jméno</th><th>Stav</th><th>Datum</th><th></th></tr>\n\n";
 $result = $db->query('SELECT * FROM files WHERE FileStatus != ' . DownloadStatus::STATUS_DISCARDED . ' ORDER BY FileStatus = ' . DownloadStatus::STATUS_DOWNLOADING . ' DESC, FileStatus = ' . DownloadStatus::STATUS_FINISHED . ' ASC,PriorityPercent DESC,CreatedAt DESC,DownloadedAt DESC');
 
 $changedFiles = 0;
@@ -224,15 +224,19 @@ foreach ($result as $row) {
 		}
 	}
 	if ($image) {
-		print '<a href="' . $row['ThumbFileName'] .'"><img style="max-width: ' . $thumbnailWidth . 'px" ';
+		$class = array(
+			'preview-image'
+		);
+		print '<a href="' . $row['ThumbFileName'] .'"><img style="max-width: ' . $thumbnailWidth . 'px"';
 		if ($rowCounter < 16) { // load first ones directly
 			print ' src="';
 		} else {
-			print ' class="lazy" data-src="';
+			print ' data-src="';
+			$class[] = 'lazy';
 		}
-		print $image . '" /></a>';
+		print $image . '" class="' . implode(' ', $class) . '"/></a>';
 	}
-	print '</td>';
+	print "</td>\n";
     print '<td class="rowTitle">';
     if (!DownloadStatus::isError($row['FileStatus'])) {
         print '<a href="' . $row['Url'] . '">' . $row['Title'] . '</a>';
@@ -249,7 +253,7 @@ foreach ($result as $row) {
     }
     print '" title="' . $row['FileStatus'] .'"';
     print ' data-filestatus="' . $row['FileStatus'] .'"';
-    print '>';
+    print ">\n";
     print DownloadStatus::getTextStatus($row['FileStatus']) . '</td>';
 
     print '<td class="rowDate">';
@@ -258,7 +262,7 @@ foreach ($result as $row) {
 
     print '</td>';
 
-    print '<td  class="rowActions">';
+    print '<td class="rowActions">';
 
     if (DownloadStatus::isError($row['FileStatus'])) { // || $row['FileStatus'] == DownloadStatus::STATUS_FINISHED) {
         echo "<a class='actionButton' href='?do=delete&id=" . $row['Id'] . "' title='Vyřadit z fronty' onclick='return confirm(\"Opravdu vyřadit z fronty?\")'>\\</a>";
@@ -267,7 +271,7 @@ foreach ($result as $row) {
             echo "<a class='actionButton' href='?do=retry&id=" . $row['Id'] . "' title='Zkusit znovu' onclick='return confirm(\"Opravdu zkusit znovu?\")'>J</a>";
 //        }
     }
-    print '</td></tr>';
+    print "</td></tr>\n\n";
 
     $rowCounter++;
 

@@ -113,7 +113,7 @@
 
       var separator = $l.wordSeparator || "";
       if ($l.wordSeparator === undefined) { separator = " "; }
-      return $.trim([prefix, words, suffix].join(separator));
+      return $.trim([prefix, words, suffix].join(separator)).replace('před 1 dnem', 'včera');
     },
 
     parse: function(iso8601) {
