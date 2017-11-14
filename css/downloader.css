@@ -27,6 +27,9 @@ button .actionButton {
 	font-size: 150%;
 }
 
+.preview-image {
+	max-width: 120px;
+}
 .rowTitle {
 	max-width: 30em;
 }

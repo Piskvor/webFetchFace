@@ -199,6 +199,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		<div id="yt-search-container"></div>
 	</form>
 </div>
+<div id="lightbox"></div>
 
 <?php
 print '<table border=0>';
@@ -227,7 +228,7 @@ foreach ($result as $row) {
 		$class = array(
 			'preview-image'
 		);
-		print '<a href="' . $row['ThumbFileName'] .'"><img style="max-width: ' . $thumbnailWidth . 'px"';
+		print '<a href="' . $row['ThumbFileName'] .'" data-featherlight="image"><img'; //style="max-width: ' . $thumbnailWidth . 'px"';
 		if ($rowCounter < 16) { // load first ones directly
 			print ' src="';
 		} else {
