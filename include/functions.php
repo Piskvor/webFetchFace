@@ -1,10 +1,14 @@
 <?php
 
+$tz = new DateTimeZone('Europe/Prague');
+
 function dateTag($date, $inputFormat, $machineFormat, $humanFormat) {
+	global $tz; // yuck
+
 	if (!$date) {
 		return '';
 	}
-	$date = date_create_from_format($inputFormat, $date);
+	$date = date_create_from_format($inputFormat, $date, $tz);
 	return '<time class="timeago" datetime="' . $date->format($machineFormat) . '">' . $date->format($humanFormat) . '</time>';
 }
 
