@@ -46,6 +46,7 @@ class DbConnection
             DownloadStartedAt DATETIME,
             DownloadedAt DATETIME,
             DownloadAttempts INTEGER DEFAULT '0',
+            MetadataFilename TEXT,
             MetadataAttempts INTEGER DEFAULT '0',
             DownloaderPid INTEGER,
             PriorityPercent INT DEFAULT 100 NULL

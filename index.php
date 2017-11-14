@@ -30,7 +30,7 @@ $db = new DbConnection($filesDb);
 $prepFindUrl = $db->prepare('SELECT Id,FileStatus FROM files WHERE Url=? AND FileStatus <= 100');
 $prepStatus = $db->prepare('UPDATE files SET FileStatus=? WHERE Id=?');
 $prepAttempts = $db->prepare('UPDATE files SET DownloadAttempts=DownloadAttempts+1 WHERE Id=?');
-$prepMetadataAttempts = $db->prepare('UPDATE files SET FileStatus=?, MetadataAttempts=MetadataAttempts+1 WHERE Id=?');
+$prepMetadataAttempts = $db->prepare('UPDATE files SET FileStatus=?, MetadataFileName=?, MetadataAttempts=MetadataAttempts+1 WHERE Id=?');
 
 if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     $requestId = null;
@@ -106,7 +106,8 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
             }
             $jsonFilename = $dir . DIRECTORY_SEPARATOR . $id . '.json';
             if ($parsingResult === DownloadStatus::STATUS_NEW) {
-                $prepMetadataAttempts->execute(array(DownloadStatus::STATUS_DOWNLOADING_METADATA, $id));
+
+                $prepMetadataAttempts->execute(array(DownloadStatus::STATUS_DOWNLOADING_METADATA, substr($jsonFilename, strlen($tmpDir) - strlen($relDir)), $id));
                 $ytdResult = -1;
                 exec($ytd . ' --dump-json' . " '" . $url . "' > " . $jsonFilename, $output, $ytdResult);
                 chmod($jsonFilename, 0777);
@@ -227,7 +228,7 @@ foreach ($result as $row) {
         $changedFiles++;
     }
 
-    print '<tr>';
+    print '<tr data-id="' . $row['Id'] . '">';
 	print '<td class="rowThumb">';
 	$image = null;
 	if (!$noImage) {
@@ -262,12 +263,17 @@ foreach ($result as $row) {
     print '</td>';
 	print '<td class="rowStatus';
     if (DownloadStatus::isError($row['FileStatus'])) {
-        print ' isError';
+        print ' isError rowStatusIsError';
     }
     print '" title="' . $row['FileStatus'] .'"';
     print ' data-filestatus="' . $row['FileStatus'] .'"';
     print ">\n";
-    print DownloadStatus::getTextStatus($row['FileStatus']) . '</td>';
+    if (DownloadStatus::isError($row['FileStatus'])) {
+		print '<a href="' . $row['MetadataFileName'] . '">' . DownloadStatus::getTextStatus($row['FileStatus']) . '</a>';
+	} else {
+		print DownloadStatus::getTextStatus($row['FileStatus']);
+	}
+    print '</td>';
 
     print '<td class="rowDate">';
 
