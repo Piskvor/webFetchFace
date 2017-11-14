@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "__MSG_extensionName__",
+  "author": "Piskvor",
+  "description": "__MSG_extensionDescription__",
+  "version": "1.0.0",
+  "default_locale": "cs",
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "permissions": [
+    "contextMenus",
+    "tabs",
+    "<all_urls>"
+  ]
+}

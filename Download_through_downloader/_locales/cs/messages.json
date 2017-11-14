@@ -1,0 +1,14 @@
+{
+  "extensionName": {
+    "message": "dl.piskvor.org",
+    "description": "Name of the extension."
+  },
+  "extensionDescription": {
+    "message": "Stáhnout pomocí downloaderu.",
+    "description": "Description of the add-on."
+  },
+  "contextMenuItemOpenInDownloader": {
+    "message": "Stáhnout přes dl.piskvor.org",
+    "description": "Title of context menu item - same for selection/link/page."
+  }
+}
