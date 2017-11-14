@@ -44,7 +44,9 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     if ($action === 'add') {
         $now = date($sqlDate);
 
-        $skippedUrls = 0;
+        $titleAdded = array();
+        $urlAdded = array();
+        $urlSkipped = array();
         $prepNew = $db->prepare('INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus) VALUES (?,?,?,?)');
         foreach (explode("\n", $_REQUEST['urls']) as $url) {
             $url = trim($url);
@@ -89,7 +91,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
             $existsAlready = $prepFindUrl->execute(array($url));
             $prepFindUrl->fetch();
             if ($idExists && !DownloadStatus::isError($fileStatus)) {
-            	$skippedUrls++;
+            	$urlSkipped[] = $url;
                 continue;
             }
             $result = $prepNew->execute(array($url, $host, $now, $parsingResult));
@@ -123,6 +125,8 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 						$prepStatusJson = $db->prepare('UPDATE files SET FileStatus=?, FileName=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?');
                         $prepStatusJson->execute(array(DownloadStatus::STATUS_QUEUED, $jsonData['_filename'], $jsonData['title'], $jsonData['duration'], $jsonData['extractor'], $thumbFilePath, $jsonData['id'], $now, $now, $id));
 
+                        $urlAdded[] = $url;
+                        $titleAdded[] = $jsonData['title'];
                         if (!empty($jsonData['thumbnail']) && !file_exists($thumbFilePath)) {
                             $DLFile = $thumbFilePath;
                             $DLURL = $jsonData['thumbnail'];
@@ -160,13 +164,19 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		$result = array(
 				'result' => 'OK'
 		);
-		if ($skippedUrls > 0) {
-			$result['skipped'] = $skippedUrls;
+		$result['added'] = count($titleAdded);
+		if (!empty($titleAdded)) {
+			$result['addedTitles'] = $titleAdded;
+			$result['addedUrls'] = $urlAdded;
+		}
+		$result['skipped'] = count($urlSkipped);
+		if (!empty($urlSkipped)) {
+			$result['skippedUrls'] = $urlSkipped;
 		}
 		echo json_encode($result);
 	} else {
 		header('Location: ?do=list');
-	}	
+	}
     exit;
 }
 
