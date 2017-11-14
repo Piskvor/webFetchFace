@@ -16,7 +16,7 @@
 	<!--suppress JSUnusedLocalSymbols - used in downloader.js -->
 	<script>
 		var apiKey = '<?php
-			include_once __DIR__ . DIRECTORY_SEPARATOR . 'apikey.php';
+			@include_once __DIR__ . DIRECTORY_SEPARATOR . 'apikey.php';
 			if (!empty($apikey)) { echo $apikey; } // defined in apikey.php ?>';
 		var searchInitRunning = false;
 		var searchUsable = false;

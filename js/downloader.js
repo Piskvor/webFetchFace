@@ -26,7 +26,7 @@ $(document).ready(function () {
 	$('button').on('dblclick',function () {
 		return false;
 	});
-	searchInit();
+	//searchInit();
 });
 
 // After the API loads, call a function to enable the search box.
@@ -105,6 +105,9 @@ function searchInit() {
 	searchInitRunning = true;
 	$('#ytSearch').hide();
 	$('.ytSearchLoaded').show();
+	if (typeof gapi === 'undefined') {
+		return;
+	}
 	enableYtSearchUi();
 	// 1. Load the JavaScript client library.
 	gapi.load('client', gapiStart);
