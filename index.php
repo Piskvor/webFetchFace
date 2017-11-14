@@ -112,7 +112,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
                 exec($ytd . ' --dump-json' . " '" . $url . "' > " . $jsonFilename, $output, $ytdResult);
                 chmod($jsonFilename, 0777);
                 @chgrp($jsonFilename, 'honza');
-                if ($ytdResult === 0) {
+                if (file_exists($jsonFilename)) {
                     $jsonData = json_decode(file_get_contents($jsonFilename), true, 20);
                     if (count($jsonData) > 0) {
                         $now = date($sqlDate);
