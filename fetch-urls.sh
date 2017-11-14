@@ -52,7 +52,7 @@ for i in $ROWS ; do
     export ID=$(echo $i | sed 's/|.*//')
     URL=$(echo $i | sed 's/^[0-9]\+|//')
 #echo $URL;continue
-    sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=4,DownloadStartedAt=DATETIME('now'),DownloadAttempts=DownloadAttempts+1 WHERE Id=${ID}"
+    sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=4,DownloadStartedAt=DATETIME('now', 'localtime'),DownloadAttempts=DownloadAttempts+1 WHERE Id=${ID}"
 
     IS_CT=$(echo $URL | grep -c ceskatelevize.cz || true)
     OPTS=""
@@ -67,7 +67,7 @@ for i in $ROWS ; do
     set -e
     if [ $RESULT -eq 0 ]; then
 
-       sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now') WHERE Id=${ID}"
+       sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime') WHERE Id=${ID}"
 
 	   continue
 
@@ -78,7 +78,7 @@ for i in $ROWS ; do
 
 	   continue
 
-       sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=5,DownloaderPid=NULL,DownloadedAt=DATETIME('now') WHERE Id=${ID}"
+       sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=5,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime') WHERE Id=${ID}"
 	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
 
 
