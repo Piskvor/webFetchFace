@@ -2,7 +2,12 @@
 	<meta charset="utf-8">
 	<title>dl.piskvor.org</title>
 	<link rel="stylesheet" type="text/css" href="css/downloader.css" charset="utf-8" />
-	<script src="js/jquery-latest.js" type="text/javascript" charset="utf-8"></script>
+	<script src="//code.jquery.com/jquery-latest.js" integrity="sha384-wciR07FV6RBcI+YEVsZy/bInxpyn0uefUp6Yi9R5r46Qv/yk/osR5nzY31koh9Uq" crossorigin="anonymous" type="text/javascript" charset="utf-8"></script>
+	<script>
+		if (typeof jQuery === 'undefined') {
+			document.write(decodeURIComponent("%3Cscript src='js/jquery-latest.js' type='text/javascript' charset='utf-8'%3E%3C/script%3E"));
+		}
+	</script>
 	<script src="js/jquery.lazy.min.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/jquery.timeago.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/jquery.timeago.cs.js" type="text/javascript" charset="utf-8"></script>
@@ -12,7 +17,7 @@
 	<script>
 		var apiKey = '<?php
 			include_once __DIR__ . DIRECTORY_SEPARATOR . 'apikey.php';
-			if (!empty($apikey)) { echo $apikey; } // defined in apiKey.php ?>';
+			if (!empty($apikey)) { echo $apikey; } // defined in apikey.php ?>';
 		var searchInitRunning = false;
 		var searchUsable = false;
 	</script>
