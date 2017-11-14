@@ -176,11 +176,12 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 <head>
     <meta charset="utf-8">
     <title>⇩ dl.piskvor.org</title>
-	<link rel="stylesheet" type="text/css" href="downloader.css" />
-	<script src="jquery.js"></script>
-	<script src="jquery.lazy.min.js"></script>
-	<script src="jquery.timeago.js"></script>
-	<script src="jquery.timeago.cs.js"></script>
+	<link rel="stylesheet" type="text/css" href="downloader.css" charset="utf-8" />
+	<script src="jquery-latest.js" type="text/javascript" charset="utf-8"></script>
+	<script src="jquery.lazy.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="jquery.timeago.js" type="text/javascript" charset="utf-8"></script>
+	<script src="jquery.timeago.cs.js" type="text/javascript" charset="utf-8"></script>
+	<script src="featherlight.min.js" type="text/javascript" charset="utf-8"></script>
 	<script async defer src="https://apis.google.com/js/api.js"></script>
 	<script>
 		var apiKey = '<?php if (!empty($apikey)) { echo $apikey; } // defined in apiKey.php ?>';
