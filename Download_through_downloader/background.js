@@ -5,13 +5,6 @@ browser = (function () {
         window.chrome;
 })();
 
-function filterTabs(tabsFound) {
-	var currentTab = tabsFound[0];
-	var xhr = new XMLHttpRequest();
-	xhr.open("GET", loadUrl);
-	xhr.send();
-}
-
 // actually sends the request out - by opening a new tab
 function osm_piskvor_org_share(e) {
     // we need to hard-code this, downloader doesn't let us configure
@@ -42,7 +35,7 @@ browser.contextMenus.create({
 // handle context menu click
 browser.contextMenus.onClicked.addListener(function (info) {
     // we only care about our one item
-    if (info.menuItemId != "osm-piskvor-org-dl-remote-link") {
+    if (info.menuItemId !== "osm-piskvor-org-dl-remote-link") {
         return;
     }
     if (info["selectionText"]) {
