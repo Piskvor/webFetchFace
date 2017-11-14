@@ -175,7 +175,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 <html>
 <head>
     <meta charset="utf-8">
-    <title>⇩ dl.piskvor.org</title>
+    <title>dl.piskvor.org</title>
 	<link rel="stylesheet" type="text/css" href="downloader.css" charset="utf-8" />
 	<script src="jquery-latest.js" type="text/javascript" charset="utf-8"></script>
 	<script src="jquery.lazy.min.js" type="text/javascript" charset="utf-8"></script>
@@ -199,9 +199,9 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 			var $ytSearch = $('#ytSearch');
 			if (apiKey) {
 				$ytSearch.show();
-				$ytSearch.on('click mouseover', function (e) {
+				$ytSearch.on('click mouseover', function () {
 					if (searchInitRunning) {
-						return;
+						return; // do not preventDefault!
 					}
 					searchInitRunning = true;
 					$ytsb = $('#yt-search-button');
@@ -233,6 +233,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		function search(e) {
 			var q = $('#yt-query').val().trim();
 			if (!q) {
+				e.preventDefault();
 				return false;
 			}
 			var request = gapi.client.youtube.search.list({
@@ -287,7 +288,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 <div class="ytSearchWrapper">
 	<button class="ytSearchOn" id="ytSearch" style="display: none"><span class="actionButton">y</span> Hledat na YT</button>
 	<form class="ytSearchLoaded" style="display: none">
-		<input type="text" id="yt-query"><button id="yt-search-button" disabled="disabled" type="submit"><span class="actionButton">P</span> Hledat</button>
+		<input type="text" id="yt-query" title="název videa"><button id="yt-search-button" disabled="disabled" type="submit"><span class="actionButton">P</span> Hledat</button>
 		<div id="yt-search-container"></div>
 	</form>
 </div>
@@ -298,6 +299,7 @@ print "<tr><th>Náhled</th><th>Jméno</th><th>Stav</th><th>Datum</th><th></th></
 $result = $db->query('SELECT * FROM files WHERE FileStatus != ' . DownloadStatus::STATUS_DISCARDED . ' ORDER BY FileStatus = ' . DownloadStatus::STATUS_DOWNLOADING . ' DESC, FileStatus = ' . DownloadStatus::STATUS_FINISHED . ' ASC,PriorityPercent DESC,CreatedAt DESC,DownloadedAt DESC');
 
 $changedFiles = 0;
+$rowCounter = 0;
 $toDownload = array();
 foreach ($result as $row) {
     if ($row['FileStatus'] == DownloadStatus::STATUS_QUEUED) {
@@ -315,7 +317,13 @@ foreach ($result as $row) {
 		}
 	}
 	if ($image) {
-		print '<a href="' . $row['ThumbFileName'] .'"><img style="max-width: ' . $thumbnailWidth . 'px" class="lazy" data-src="' . $image . '" /></a>';
+		print '<a href="' . $row['ThumbFileName'] .'"><img style="max-width: ' . $thumbnailWidth . 'px" ';
+		if ($rowCounter < 16) { // load first ones directly
+			print ' src="';
+		} else {
+			print ' class="lazy" data-src="';
+		}
+		print $image . '" /></a>';
 	}
 	print '</td>';
     print '<td class="rowTitle">';
@@ -353,6 +361,8 @@ foreach ($result as $row) {
 //        }
     }
     print '</td></tr>';
+
+    $rowCounter++;
 
 }
 print '</table>';
