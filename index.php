@@ -185,6 +185,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 	<script>
 		var apiKey = '<?php if (!empty($apikey)) { echo $apikey; } // defined in apiKey.php ?>';
 		var searchInitRunning = false;
+		var searchUsable = false;
 
 		$(document).ready(function () {
 			var $addBtn = $('#addUrls');
@@ -221,7 +222,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 	</script>
 	<script>
 		// After the API loads, call a function to enable the search box.
-		function handleAPILoaded() {
+		function enableYtSearchUi() {
 			$ytsb = $('#yt-search-button');
 			$ytsb.find('.actionButton').html('y');
 			$ytsb.removeAttr('disabled');
@@ -250,12 +251,16 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 			gapi.client.init({
 				'apiKey': apiKey
 			}).then(function() {
-				gapi.client.load('youtube', 'v3', handleAPILoaded);
+				gapi.client.load('youtube', 'v3', function(){
+					enableYtSearchUi();
+					searchUsable = true;
+				});
 			});
 		}
 
 		function searchInit() {
 			$('.ytSearchLoaded').show();
+			enableYtSearchUi();
 			// 1. Load the JavaScript client library.
 			gapi.load('client', gapiStart);
 		}
@@ -309,7 +314,7 @@ foreach ($result as $row) {
 		}
 	}
 	if ($image) {
-		print '<img style="max-width: ' . $thumbnailWidth . 'px" class="lazy" data-src="' . $image . '" />';
+		print '<a href="' . $row['ThumbFileName'] .'"><img style="max-width: ' . $thumbnailWidth . 'px" class="lazy" data-src="' . $image . '" /></a>';
 	}
 	print '</td>';
     print '<td class="rowTitle">';
