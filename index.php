@@ -45,6 +45,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     if ($action === 'add') {
         $now = date($sqlDate);
 
+        $skippedUrls = 0;
         $prepNew = $db->prepare('INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus) VALUES (?,?,?,?)');
         foreach (explode("\n", $_REQUEST['urls']) as $url) {
             $url = trim($url);
@@ -89,6 +90,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
             $existsAlready = $prepFindUrl->execute(array($url));
             $prepFindUrl->fetch();
             if ($idExists && !DownloadStatus::isError($fileStatus)) {
+            	$skippedUrls++;
                 continue;
             }
             $result = $prepNew->execute(array($url, $host, $now, $parsingResult));
@@ -105,7 +107,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
                 $ytdResult = -1;
                 exec($ytd . ' --dump-json' . " '" . $url . "' > " . $jsonFilename, $output, $ytdResult);
                 chmod($jsonFilename, 0777);
-                chgrp($jsonFilename, 'honza');
+                @chgrp($jsonFilename, 'honza');
                 if ($ytdResult === 0) {
                     $jsonData = json_decode(file_get_contents($jsonFilename), true, 20);
                     if (count($jsonData) > 0) {
@@ -156,7 +158,13 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
     }
     if ($isScript) {
 		header("Content-Type: application/json");
-		echo '{result: "OK"}';
+		$result = array(
+				'result' => 'OK'
+		);
+		if ($skippedUrls > 0) {
+			$result['skipped'] = $skippedUrls;
+		}
+		echo json_encode($result);
 	} else {
 		header('Location: ?do=list');
 	}	
