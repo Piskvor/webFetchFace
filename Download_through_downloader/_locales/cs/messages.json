@@ -10,5 +10,22 @@
   "contextMenuItemOpenInDownloader": {
     "message": "Stáhnout přes dl.piskvor.org",
     "description": "Title of context menu item - same for selection/link/page."
+  },
+
+  "messageResponseSuccess": {
+    "message": "Přidáno: ",
+    "description": "Message shown when request was successful."
+  },
+  "messageResponseSkipped": {
+    "message": "Už je ve frontě: ",
+    "description": "Message shown when request was understood, but the URL is already queued."
+  },
+  "messageResponseError": {
+    "message": "Chyba: ",
+    "description": "Message shown when request was understood, but the URL is problematic, e.g. not downloadable."
+  },
+  "messageResponseFailed": {
+    "message": "Nepodařilo se zařadit do fronty: ",
+    "description": "Message shown when request failed or failed parsing response."
   }
 }

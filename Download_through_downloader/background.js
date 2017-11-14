@@ -79,30 +79,30 @@ function xhr_call_inpage(url, loadend) {
 	xhr.send();
 }
 
-function xhr_call_inpage_result(event,notyf,requestedUrl) {
+function xhr_call_inpage_result(event,notyf,requestedUrl,texts) {
+	console.log(texts);
 	if(!event.target) {
-		notyf.alert("Nepodařilo se zařadit do fronty: " + requestedUrl);
+		notyf.alert(texts['failed'] + requestedUrl);
 	} else if (event.target.readyState === 4) {
 		try {
 			var response = JSON.parse(event.target.responseText);
-			// console.log(response);
 			if (response.added > 0) {
 				for (var c=0;c < response.addedTitles.length; c++) {
-					notyf.confirm("Přidáno: " + response.addedTitles[c]);
+					notyf.confirm(texts['success'] + response.addedTitles[c]);
 				}
 			}
 			if (response.skipped > 0) {
 				for (var d=0;d < response.skippedUrls.length; d++) {
-					notyf.confirm("Už je ve frontě: " + response.skippedUrls[d]);
+					notyf.confirm(texts['skipped'] + response.skippedUrls[d]);
 				}
 			}
 			if (response.errors > 0) {
 				for (var f=0;f < response.errorsUrls.length; f++) {
-					notyf.alert("Chyba: " + response.errorsUrls[f]);
+					notyf.alert(texts['error'] + response.errorsUrls[f]);
 				}
 			}
 		} catch (error) {
-			notyf.alert("Nepodařilo se zařadit do fronty: " + requestedUrl);
+			notyf.alert(texts['failed'] + requestedUrl);
 		}
 
 	} // else we don't care
@@ -123,9 +123,15 @@ function osm_piskvor_org_share(e) {
     if (url.indexOf(downloaderUrl) === -1) { // 80/20 try to avoid loops - calling /loadUrl=http://localhost/loadUrl
         loadUrl = downloaderUrl + "&urls=" + encodeURIComponent(url);
     }
+    var texts = {
+		'success': browser.i18n.getMessage("messageResponseSuccess"),
+		'skipped': browser.i18n.getMessage("messageResponseSkipped"),
+		'error': browser.i18n.getMessage("messageResponseError"),
+		'failed': browser.i18n.getMessage("messageResponseFailed")
+	};
     browser.tabs.executeScript({
       code: "!function(){ " + notyf_setup_inpage.toString() + ";" + xhr_call_inpage.toString() + ";" + xhr_call_inpage_result.toString() + /* define the functions in page... */
-	  ";notyf_setup_inpage(); xhr_call_inpage('" + loadUrl + "',function(e){xhr_call_inpage_result(e, window.notyf_iggwrurefj, '" + url + "')})}();" /* ...and call them */
+	  ";notyf_setup_inpage(); xhr_call_inpage('" + loadUrl + "',function(e){xhr_call_inpage_result(e, window.notyf_iggwrurefj, '" + url + "',"+ JSON.stringify(texts) + ")})}();" /* ...and call them */
     });
 }
 
