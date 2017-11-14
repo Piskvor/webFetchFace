@@ -2,3 +2,4 @@ downloads*
 files
 tmp/*
 include/apikey.php
+css/downloader.css
