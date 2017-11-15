@@ -277,7 +277,7 @@ foreach ($result as $row) {
 
     print '<td class="rowDate">';
 
-    print dateTag($row['DownloadedAt'] ? $row['DownloadedAt'] : $row['CreatedAt'], $sqlDate, $isoDate, $humanDate);
+    print dateTag($row['DownloadedAt'] ? $row['DownloadedAt'] : ($row['DownloadStartedAt'] ? $row['DownloadStartedAt'] : $row['CreatedAt']), $sqlDate, $isoDate, $humanDate);
 
     print '</td>';
 
