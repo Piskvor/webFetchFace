@@ -2,6 +2,20 @@
 
 $tz = new DateTimeZone('Europe/Prague');
 
+function getSanitizedName($displayId, $title, $fileName) {
+	$extPost = strrpos($fileName,'.');
+	$ext = '';
+	if ($extPost !== false) {
+		$ext = substr($fileName, $extPost);
+	}
+	$convertedName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $title);
+	$convertedName = preg_replace('/[^\w_-]/','_', $convertedName);
+	$convertedName = str_replace('_-_', '-',$convertedName);
+	$convertedName = preg_replace('/_+/','_', $convertedName);
+	$convertedName .=  '-' . $displayId . $ext;
+	return $convertedName;
+}
+
 function dateTag($date, $inputFormat, $machineFormat, $humanFormat) {
 	global $tz; // yuck
 
