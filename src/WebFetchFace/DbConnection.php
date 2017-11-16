@@ -33,6 +33,8 @@ class DbConnection
             Url TEXT,
             FileStatus INTEGER DEFAULT '0',
             FileName TEXT,
+            FileNameConverted TEXT,
+			FilePath TEXT,
             Title TEXT,
             Duration INTEGER,
             Extractor TEXT,
