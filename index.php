@@ -79,6 +79,10 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
                         /** @noinspection MkdirRaceConditionInspection */
                         mkdir($dir, 0777);
                     }
+			if (preg_match('/youtu.?be/', $host) && strpos($url, 'list=')){
+				$url = preg_replace('/&?list=[a-zA-Z0-9-]+/','',$url);
+			}
+	
                 } else {
                     // URL is somewhat-valid, but not on our whitelist
                     $parsingResult = DownloadStatus::STATUS_INVALID;
