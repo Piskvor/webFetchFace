@@ -166,17 +166,12 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 						$thumbFilePath = $thumbPath . DIRECTORY_SEPARATOR
 							. $thumbFileName;
 						$prepStatusJson = $db->prepare(
-							'UPDATE files SET FileStatus=?, FileName=?, FileNameConverted=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
+							'UPDATE files SET FileStatus=?, FileName=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
 						);
 						$prepStatusJson->execute(
 							array(
 								DownloadStatus::STATUS_QUEUED,
 								$jsonData['_filename'], 
-								getSanitizedName(
-									isset($jsonData['id']) ? $jsonData['id'] : $jsonData['display_id'],
-									$jsonData['title'],
-									$jsonData['_filename']
-								),
 								$jsonData['title'],
 								$jsonData['duration'], $jsonData['extractor'],
 								$thumbFilePath, $jsonData['id'], $now, $now, $id

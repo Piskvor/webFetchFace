@@ -3,11 +3,13 @@
 $tz = new DateTimeZone('Europe/Prague');
 
 function getSanitizedName($displayId, $title, $fileName) {
-	$extPost = strrpos($fileName,'.');
 	$ext = '';
+	
+	$extPost = strrpos($fileName,'.');
 	if ($extPost !== false) {
 		$ext = substr($fileName, $extPost);
 	}
+	
 	$convertedName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', trim($title));
 	$convertedName = preg_replace('/[^\w_-]/','_', $convertedName);
 	$convertedName = str_replace('_-_', '-',$convertedName);
