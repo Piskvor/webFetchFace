@@ -51,3 +51,28 @@ foreach ($result as $row) {
 	}
 
 }
+
+$result = $db->query('SELECT Id,MetadataFileName FROM files WHERE DisplayId IS NULL AND MetadataFileName IS NOT NULL ORDER BY Id DESC');
+
+$changedFiles = 0;
+$toDownload = array();
+
+
+$prepDisplayId = $db->prepare('UPDATE files SET DisplayId=? WHERE Id=?');
+
+foreach ($result as $row) {
+	$id = $row['Id'];
+	$data = json_decode(file_get_contents($row['MetadataFileName']),true, 20);
+
+	if (!$data) {
+		echo "Not found: $id";
+	}
+	
+	$did = getDisplayId($data);
+	if ($did != '') {
+		$prepDisplayId->execute(array($did, $id));
+	} else {
+		echo "cannot update $id\n";
+	}
+
+}

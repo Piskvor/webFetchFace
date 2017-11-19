@@ -2,21 +2,41 @@
 
 $tz = new DateTimeZone('Europe/Prague');
 
-function getSanitizedName($displayId, $title, $fileName) {
+function getFilenameParts($fileName, $position=-1) {
+	$name = $fileName;
 	$ext = '';
-	
 	$extPost = strrpos($fileName,'.');
 	if ($extPost !== false) {
+		$name = substr($fileName, 0, $extPost-1);
 		$ext = substr($fileName, $extPost);
 	}
-	
-	$convertedName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', trim($title));
-	$convertedName = preg_replace('/[^\w_-]/','_', $convertedName);
+	if ($position == 0) {
+		return $name;
+	} else if ($position == 1) {
+		return $ext;
+	} else {
+		return array($name,$ext);
+	}
+
+}
+
+function getSanitizedName($displayId, $title, $fileName) {
+	$ext = getFilenameParts($fileName,1);
+		
+	$convertedName =	trim($title);
+//	$convertedName = str_replace('-', '-',$convertedName);
+	$convertedName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $convertedName);
 	$convertedName = str_replace('_-_', '-',$convertedName);
+	$convertedName = preg_replace('/[^\w_-]+/','_', $convertedName);
 	$convertedName = preg_replace('/_+/','_', $convertedName);
 	$convertedName .=  '-' . $displayId . $ext;
 	return $convertedName;
 }
+
+function getDisplayId($data) {
+	return isset($data['id']) ? $data['id'] : $data['display_id'];
+}
+
 
 function dateTag($date, $inputFormat, $machineFormat, $humanFormat) {
 	global $tz; // yuck

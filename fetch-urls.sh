@@ -5,6 +5,7 @@ set -euxo pipefail
 JMA_SP="q5tDF"
 MAJA_SP=""
 BN="threepio download"
+FILES_DIR="files/"
 trap "exit 1" INT
 
 export DIR_NAME=$(dirname $0)
@@ -21,7 +22,7 @@ cd $DIR_NAME
 sqlite3 $SQLITE_DB "UPDATE files SET DownloaderPid=${MY_PID},FileStatus=3 WHERE FileStatus=2 OR (FileStatus=3 and DownloaderPid IS NULL)"
  #AND DownloaderPid IS NULL"
 
-cd $DIR_NAME/files
+cd $DIR_NAME/$FILES_DIR
 
 cleanupDeadDownloads () {
 	PIDS_RUNNING=$(sqlite3 $SQLITE_DB 'SELECT DISTINCT DownloaderPid FROM files WHERE FileStatus in(3,4)'||true)
@@ -47,6 +48,7 @@ ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE DownloaderPid=${MY_PID
 #ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE FileStatus=3 ORDER BY PriorityPercent DESC,Id ASC"||true)
 
 IFS=$'\n'
+SOME_SUCCESS=0
 for i in $ROWS ; do
 
     export ID=$(echo $i | sed 's/|.*//')
@@ -67,8 +69,8 @@ for i in $ROWS ; do
     set -e
     if [ $RESULT -eq 0 ]; then
 
-       sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime') WHERE Id=${ID}"
-
+       sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime'),FilePath='${FILES_DIR}' WHERE Id=${ID}"
+		SOME_SUCCESS=1
 	   continue
 
 	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
@@ -100,4 +102,9 @@ for i in $ROWS ; do
     fi
 
 done
+
+if [ "$SOME_SUCCESS" = "1" ]; then
+	cd $DIR_NAME
+	php set-new-name.php
+fi
 exit 0
