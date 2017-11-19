@@ -103,8 +103,14 @@ for i in $ROWS ; do
 
 done
 
-if [ "$SOME_SUCCESS" = "1" ]; then
+if [ "$SOME_SUCCESS" = "0" ]; then
 	cd $DIR_NAME
+	$(
+	    if [ -d files/pohadky ]; then
+		cd files/pohadky
+	        bash rpi/.scripts/create_dirs.sh
+	    fi
+	)
 	php set-new-name.php
 fi
 exit 0

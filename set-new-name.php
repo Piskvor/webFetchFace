@@ -22,7 +22,7 @@ $sqlDate = 'Y-m-d H:i:s';
 $isoDate = 'c';
 $humanDate = 'j.n.Y H:i:s';
 
-$result = $db->query('SELECT Id,Title,FileName,FilePath,MetadataFileName,DisplayId FROM files WHERE FileNameConverted IS NULL AND DownloadedAt IS NOT NULL ORDER BY Id DESC');
+$result = $db->query('SELECT Id,Title,FileName,FilePath,MetadataFileName,DisplayId FROM files WHERE FileNameConverted IS NULL AND DownloadedAt IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
 
 $changedFiles = 0;
 $toDownload = array();
@@ -30,7 +30,6 @@ $thumbnailWidth = 120;
 
 
 $prepConverted = $db->prepare('UPDATE files SET FileNameConverted=? WHERE Id=?');
-$prepFilename  = $db->prepare('UPDATE files SET FileName=? WHERE Id=?');
 
 foreach ($result as $row) {
 
@@ -68,7 +67,7 @@ foreach ($result as $row) {
 		$data = json_decode(file_get_contents($row['MetadataFileName']),true,20);
 		$did = getDisplayId($data);
 	} else {
-		echo "No displayId, no metadata: $id";
+		//echo "No displayId, no metadata: $id";
 		continue;
 	}
 	$did .= '__' . $id;
@@ -83,5 +82,34 @@ foreach ($result as $row) {
 		}
 	} else {
 		$prepConverted->execute(array($newFilename,$id));
+	}
+}
+$result = $db->query('SELECT Id,Title,FileNameConverted,FilePath,MetadataFileName,DisplayId FROM files'
+. ' WHERE FilePath ="files/"  AND DownloadedAt IS NOT NULL AND FileNameConverted IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
+
+$dirs = getDirs();
+	
+$prepFilepath  = $db->prepare('UPDATE files SET FilePath=? WHERE Id=?');
+
+foreach ($result as $row) {
+
+	$id = $row['Id'];
+	$filepath = $row['FilePath'];
+	$filename = $row['FileNameConverted'];
+	$lcfn = strtolower($filename);
+	foreach ($dirs as $match => $dir) {
+		if (strpos($lcfn, $match) !== false) {
+			$newdir = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR 
+				. 'pohadky' . DIRECTORY_SEPARATOR . 'rpi' . DIRECTORY_SEPARATOR . $dir);
+				
+			if (is_dir($newdir)) {
+				$newfilename = preg_replace('~/+~', '/',$newdir . DIRECTORY_SEPARATOR . $filename);
+				$oldfilename = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR . $filename);
+				if (rename($oldfilename,$newfilename)) {
+					$prepFilepath->execute(array($newdir,$id));
+				}
+			}
+			continue;
+		}
 	}
 }

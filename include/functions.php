@@ -1,5 +1,13 @@
 <?php
 
+@include_once __DIR__ . DIRECTORY_SEPARATOR . 'dirs.php';
+
+if (!function_exists('getDirs')){
+	function getDirs(){
+		return array();
+	}
+}
+
 $tz = new DateTimeZone('Europe/Prague');
 
 function getFilenameParts($fileName, $position=-1) {
