@@ -118,7 +118,7 @@
 	}
 }
 
-.notyf__icon--alert, .notyf__icon--confirm {
+.notyf__icon--alert, .notyf__icon--confirm, .notyf__icon--info {
 	height: 21px;
 	width: 21px;
 	background: #fff;
@@ -173,6 +173,16 @@
 	left: 10px
 }
 
+.notyf__icon--info:after, .notyf__icon--info:before {
+	content: "";
+	background: #a0a0a0;
+	display: block;
+	position: absolute;
+	width: 3px;
+	border-radius: 3px
+}
+
+
 .notyf__toast {
 	display: block;
 	overflow: hidden;
@@ -189,6 +199,10 @@
 
 .notyf__toast.notyf--confirm {
 	background: #3dc763
+}
+
+.notyf__toast.notyf--info {
+	background: #a0a0a0
 }
 
 .notyf__toast.notyf--disappear {

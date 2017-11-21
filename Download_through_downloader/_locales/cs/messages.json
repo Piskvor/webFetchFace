@@ -12,6 +12,10 @@
     "description": "Title of context menu item - same for selection/link/page."
   },
 
+  "messageRequestStarting": {
+    "message": "Odesílám: ",
+    "description": "Message shown when request is starting."
+  },
   "messageResponseSuccess": {
     "message": "Přidáno: ",
     "description": "Message shown when request was successful."
