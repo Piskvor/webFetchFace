@@ -170,7 +170,7 @@ if (typeof browser !== 'undefined' && browser) {
 
 		browser.tabs.executeScript({
 			code: "!function(){ " + notyf_setup_inpage__iggwrurefj.toString() + ";" + xhr_call_inpage__iggwrurefj.toString() + ";" + xhr_call_inpage_result__iggwrurefj.toString() + /* define the functions in page... */
-			";var notyf=notyf_setup_inpage__iggwrurefj(); notyf.info(" + JSON.stringify(texts.messageRequestStarting) + "); xhr_call_inpage__iggwrurefj('" + loadUrl + "',function(e){xhr_call_inpage_result__iggwrurefj(e, notyf, '" + url + "','" + downloaderLink + "'," + JSON.stringify(texts) + "), true})}();" /* ...and call them */
+			";var notyf=notyf_setup_inpage__iggwrurefj(); notyf.info(" + JSON.stringify(texts.messageRequestStarting + ' ' + url) + "); xhr_call_inpage__iggwrurefj('" + loadUrl + "',function(e){xhr_call_inpage_result__iggwrurefj(e, notyf, '" + url + "','" + downloaderLink + "'," + JSON.stringify(texts) + "), true})}();" /* ...and call them */
 		});
 	}
 
