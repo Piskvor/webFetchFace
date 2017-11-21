@@ -40,7 +40,11 @@ $(document).ready(function () {
 		return false;
 	});
 
-	$('.lazy').Lazy();
+	$('.lazy').Lazy({
+		enableThrottle: true,
+		combined: true,
+		delay: 2000
+	});
 	$('.timeago').timeago();
 	$('button').on('dblclick', function () {
 		return false;
