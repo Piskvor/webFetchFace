@@ -85,7 +85,7 @@ foreach ($result as $row) {
 	}
 }
 $result = $db->query('SELECT Id,Title,FileNameConverted,FilePath,MetadataFileName,DisplayId FROM files'
-. ' WHERE FilePath ="files/"  AND DownloadedAt IS NOT NULL AND FileNameConverted IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
+. ' WHERE FilePath ="files/"  AND FileNameConverted IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
 
 $dirs = getDirs();
 	
