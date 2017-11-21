@@ -266,11 +266,11 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'include' . DIRECTORY_SEPARATOR
 ?>
 <body>
 
-<form action="?do=add&me=𝝅🐛" method="POST" accept-charset="UTF-8"
+<form id="addForm" action="?do=add&me=𝝅🐛" method="POST" accept-charset="UTF-8"
 	  enctype="multipart/form-data">
 	<fieldset>
 		<legend>Jedna nebo více URL adres, každá na novém řádku</legend>
-		<textarea title="URL list" rows=5 cols=100 name="urls"></textarea>
+		<textarea id="urls" title="URL list" rows="5" cols="100" name="urls"></textarea>
 	</fieldset>
 	<!--<fieldset>
 		<legend>Možnosti nastavení</legend>
@@ -279,7 +279,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'include' . DIRECTORY_SEPARATOR
 	</fieldset>
 	-->
 	<button type="submit" id="addUrls"><span
-				class="actionButton button-add"></span> Přidat soubory
+				class="actionButton button-add" title="klávesa Ctrl+Enter"></span> Přidat soubory
 	</button>
 	<input type="hidden" name="wakaWakaWaka" value="·····•····· ᗤ ᗣᗣᗣᗣ"/>
 	<!-- @Darth Android: https://superuser.com/questions/194195/is-there-a-pac-man-like-character-in-ascii-or-unicode#comment1260666_357916 -->
@@ -291,7 +291,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'include' . DIRECTORY_SEPARATOR
 	<form class="ytSearchLoaded" style="display: none">
 		<input type="text" id="yt-query" title="název videa">
 		<button id="yt-search-button" disabled="disabled" type="submit"><span
-					class="actionButton button-wait"></span> Hledat
+					class="actionButton button-wait" title="klávesa Y"></span> Hledat
 		</button>
 		<ol id="yt-search-container"></ol>
 	</form>

@@ -1,11 +1,25 @@
 $(document).ready(function () {
 	var $addBtn = $('#addUrls');
-	$addBtn.on('click', function () {
-		$addBtn.find('.actionButton').removeClass('button-youtube');
-		$addBtn.find('.actionButton').addClass('button-wait');
+	$addBtn.on('click',function (addEvent) {
+		var $abt = $(addEvent.target);
+		$abt.find('.actionButton').removeClass('button-add');
+		$abt.find('.actionButton').addClass('button-wait');
 		window.setTimeout(function () {
-			$addBtn.attr('disabled', 'disabled')
+			$abt.prop('disabled', 'disabled')
 		}, 50);
+	});
+	$('#addForm').on('submit',function (submitEvent) {
+		var urls = $('#urls').val().trim();
+		if (urls === '') {
+			window.setTimeout(function () {
+				var $abt = $('#addUrls');
+				$abt.find('.actionButton').addClass('button-add');
+				$abt.find('.actionButton').removeClass('button-wait');
+				$abt.removeProp('disabled');
+			},55);
+			submitEvent.preventDefault();
+			return false;
+		}
 	});
 	var $ytSearch = $('#ytSearch');
 	if (apiKey) {
@@ -129,6 +143,7 @@ function searchCompletedCallback(response, q) {
 		$ytsc.append('<li class="yt-more-results"><a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener noreferrer">Další výsledky z <span class="actionButton button-youtube" title="YouTube"></span> (přibližně ' + response.result.pageInfo.totalResults + ')</a></li>');
 		$ytsc.find('.yt-found-item').on('click', share_native_inpage);
 	}
+	shortcutInit();
 
 	enableYtSearchUi(true);
 }
@@ -162,3 +177,58 @@ function searchInit() {
 	// 1. Load the JavaScript client library.
 	gapi.load('client', gapiStart);
 }
+
+var shortcutsUp = false;
+function shortcutInit() {
+	if (shortcutsUp) {
+		return;
+	} else {
+		shortcutsUp = true;
+	}
+
+	var shortcutOpts = {
+		'type':'keydown',
+		'propagate':false,
+		'target':document,
+		'disable_in_input':true
+	};
+	if (shortcut) {
+		for (var c=1; c <= 9; c++) {
+			var cn = c.toString(10);
+			shortcut.add(cn, shortcutDigit, shortcutOpts);
+			shortcut.add('Shift+' + cn, shortcutDigit, shortcutOpts);
+		}
+		shortcut.add('y', searchYtFocus, shortcutOpts);
+		shortcut.add('Ctrl+Enter', addItemsToQueue, {
+			'type':'keydown',
+			'propagate':true,
+			'target':document,
+			'disable_in_input':false
+		});
+
+	}
+}
+function shortcutDigit(kbdEvent) {
+	if (kbdEvent.code && kbdEvent.code.indexOf('Digit') === 0) {
+		var id = '#yt-result-' + kbdEvent.code.replace('Digit','');
+		var $result = $(id);
+		if ($result.length) {
+			$result.find('.yt-found-item').trigger('click');
+		}
+	}
+}
+function searchYtFocus(e) {
+	var $ytSearch = $('#ytSearch:visible');
+	if ($ytSearch.length) {
+		$ytSearch.trigger('click');
+	} else {
+		$('#yt-query').focus().select();
+	}
+	e.preventDefault();
+}
+function addItemsToQueue(e) {
+	var $addBtn = $('#addUrls');
+	$addBtn.trigger('click');
+	e.stopPropagation();
+}
+shortcutInit();
