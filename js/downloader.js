@@ -72,7 +72,9 @@ function enableYtSearchUi(upDown) {
 function share_native_inpage(clickEvent) {
 	var url = null;
 	if (clickEvent.target) {
-		url = $(clickEvent.target).prop('href');
+		var $link = $(clickEvent.target);
+		url = $link.prop('href');
+		$link.addClass('dl-processing')
 		url += '&isScript=1';
 		xhr_call_inpage__iggwrurefj(
 			url,
@@ -83,7 +85,15 @@ function share_native_inpage(clickEvent) {
 					url,
 					window.location.href,
 					texts,
-					share_native_inpage_finalCallback
+					false,
+					function(notyf, requestedUrl, link, response, success) {
+						$link.removeClass('dl-processing');
+						if (success) {
+							$link.addClass('dl-complete');
+						} else {
+							$link.addClass('dl-error');
+						}
+					}
 				);
 			});
 		clickEvent.stopPropagation();
@@ -92,7 +102,7 @@ function share_native_inpage(clickEvent) {
 }
 
 function share_native_inpage_finalCallback(notyf, requestedUrl, link, response, success) {
-
+console.log(notyf, requestedUrl, link, response, success);
 }
 
 var searchQueued = null;
@@ -136,7 +146,7 @@ function searchCompletedCallback(response, q) {
 				counter++;
 				$ytsc.append('<li class="yt-result" id="yt-result-' + counter + '"><a href="https://youtu.be/' + item.id.videoId + '" target="_blank" rel="noopener noreferrer">'
 					+ '<img class="yt-thumbnail" src="' + item.snippet.thumbnails.default.url + '"></a>'
-					+ '<div class="yt-texts"><div><a class="yt-found-item" href="?do=add&urls=' + encodeURIComponent('https://youtu.be/' + item.id.videoId) + '" data-video-url="https://youtu.be/' + item.id.videoId + '">' + item.snippet.title
+					+ '<div class="yt-texts"><div><a class="yt-found-item" href="?do=add&urls=' + encodeURIComponent('https://youtu.be/' + item.id.videoId) + '" data-video-url="https://youtu.be/' + item.id.videoId + '"><span class="statusLabel"></span>' + item.snippet.title
 					+ '</a></div><div class="yt-description">' + item.snippet.description
 					+ '</div></div></li>');
 				if (counter >= ytMaxResults) {

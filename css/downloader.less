@@ -17,7 +17,7 @@ label {
 }
 
 //noinspection CssNoGenericFontName
-.actionButton {
+.actionButton, .statusLabel {
 	font-family: 'Web Symbols';
 	padding: 0.2em;
 	text-decoration: none;
@@ -60,6 +60,15 @@ button .actionButton {
 	a {
 	  margin-right: 1em;
 	  vertical-align: top;
+	}
+	.dl-processing .statusLabel::before {
+	  content: 'P';
+	}
+	.dl-complete .statusLabel::before {
+	  content: '/';
+	}
+	.dl-error .statusLabel::before {
+	  content: 'W';
 	}
 	.yt-thumbnail {
 	  float: left;

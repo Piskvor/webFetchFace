@@ -83,9 +83,9 @@ function xhr_call_inpage__iggwrurefj(url, loadend) {
 	xhr.send();
 }
 
-function xhr_call_inpage_result__iggwrurefj(event, notyf, requestedUrl, link, texts, finalCallback) {
+function xhr_call_inpage_result__iggwrurefj(event, notyf, requestedUrl, link, texts, isBlank, finalCallback) {
 	var linkify = function (text) {
-		return '<a href="' + link + '" target="_blank">' + text + '</a>';
+		return '<a href="' + link + '"' + (isBlank ? ' target="_blank"' : '') + '>' + text + '</a>';
 	};
 	if (!event.target) {
 		notyf.alert(linkify(texts['messageResponseFailed'] + requestedUrl));
@@ -113,7 +113,6 @@ function xhr_call_inpage_result__iggwrurefj(event, notyf, requestedUrl, link, te
 		} catch (error) {
 			notyf.alert(linkify(texts['messageResponseFailed'] + requestedUrl));
 		}
-		console.log(typeof (finalCallback));
 		if (typeof (finalCallback) === 'function') {
 			finalCallback(notyf, requestedUrl, link, response, success);
 		}
@@ -168,7 +167,7 @@ if (typeof browser !== 'undefined' && browser) {
 		}
 		browser.tabs.executeScript({
 			code: "!function(){ " + notyf_setup_inpage__iggwrurefj.toString() + ";" + xhr_call_inpage__iggwrurefj.toString() + ";" + xhr_call_inpage_result__iggwrurefj.toString() + /* define the functions in page... */
-			";var notyf=notyf_setup_inpage__iggwrurefj(); xhr_call_inpage__iggwrurefj('" + loadUrl + "',function(e){xhr_call_inpage_result__iggwrurefj(e, notyf, '" + url + "','" + downloaderLink + "'," + JSON.stringify(texts) + ")})}();" /* ...and call them */
+			";var notyf=notyf_setup_inpage__iggwrurefj(); xhr_call_inpage__iggwrurefj('" + loadUrl + "',function(e){xhr_call_inpage_result__iggwrurefj(e, notyf, '" + url + "','" + downloaderLink + "'," + JSON.stringify(texts) + "), true})}();" /* ...and call them */
 		});
 	}
 
