@@ -16,6 +16,7 @@ $(document).ready(function () {
 				$abt.find('.actionButton').addClass('button-add');
 				$abt.find('.actionButton').removeClass('button-wait');
 				$abt.removeProp('disabled');
+				$('#urls').focus();
 			},55);
 			submitEvent.preventDefault();
 			return false;
@@ -25,11 +26,11 @@ $(document).ready(function () {
 	if (apiKey) {
 
 		$ytSearch.show();
-		$ytSearch.on('click mouseover', function () {
+		$ytSearch.on('click mouseover', function (e) {
 			if (searchInitRunning) {
 				return; // do not preventDefault!
 			}
-			searchInit();
+			searchInit(e.type === 'click');
 		});
 	} else {
 		$ytSearch.hide();
@@ -53,15 +54,16 @@ $(document).ready(function () {
 });
 
 // After the API loads, call a function to enable the search box.
-function enableYtSearchUi(upDown) {
-	// console.log({"updown":upDown,"usable":searchUsable,"queued":searchQueued});
-	// console.trace();
+function enableYtSearchUi(upDown, focusSearch) {
 	$ytsb = $('#yt-search-button');
 	var $ab = $ytsb.find('.actionButton');
 	if (upDown) {
 		$ab.addClass('button-youtube');
 		$ab.removeClass('button-wait');
 		$ytsb.removeProp('disabled');
+		if (focusSearch === true) {
+			$('#yt-query').focus();
+		}
 	} else {
 		$ab.removeClass('button-youtube');
 		$ab.addClass('button-wait');
@@ -179,7 +181,7 @@ function gapiStart() {
 	});
 }
 
-function searchInit() {
+function searchInit(focusSearch) {
 	searchInitRunning = true;
 	$('#ytSearch').hide();
 	$('.ytSearchLoaded').show();
@@ -187,7 +189,7 @@ function searchInit() {
 		return;
 	}
 	if (!searchQueued) {
-		enableYtSearchUi(true);
+		enableYtSearchUi(true, !!focusSearch);
 	}
 	// 1. Load the JavaScript client library.
 	gapi.load('client', gapiStart);
