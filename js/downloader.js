@@ -9,6 +9,7 @@ $(document).ready(function () {
 	});
 	var $ytSearch = $('#ytSearch');
 	if (apiKey) {
+
 		$ytSearch.show();
 		$ytSearch.on('click mouseover', function () {
 			if (searchInitRunning) {
@@ -81,14 +82,11 @@ var searchQueued = null;
 // Search for a specified string.
 function search(e) {
 	var q = $('#yt-query').val().trim();
-	if (!q) {
-		e.preventDefault();
-		return false;
-	}
-
-	searchQueued = q; // note that we're only keeping the last one
-	if (searchUsable) {
-		searchUsableCallback(q);
+	if (q) {
+		searchQueued = q; // note that we're only keeping the last one
+		if (searchUsable) {
+			searchUsableCallback(q);
+		}
 	}
 }
 
@@ -123,7 +121,7 @@ function searchCompletedCallback(response, q) {
 					+ '</div></div></li>');
 			}
 		}
-		$ytsc.append('<li><a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener noreferrer">Další výsledky z <span class="actionButton button-youtube" title="YouTube"></span> (přibližně ' + response.result.pageInfo.totalResults + ')</a></li>');
+		$ytsc.append('<li class="more-results"><a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener noreferrer">Další výsledky z <span class="actionButton button-youtube" title="YouTube"></span> (přibližně ' + response.result.pageInfo.totalResults + ')</a></li>');
 		$ytsc.find('.yt-found-item').on('click', share_native_inpage);
 	}
 

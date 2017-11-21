@@ -293,7 +293,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'include' . DIRECTORY_SEPARATOR
 		<button id="yt-search-button" disabled="disabled" type="submit"><span
 					class="actionButton button-wait"></span> Hledat
 		</button>
-		<ul id="yt-search-container"></ul>
+		<ol id="yt-search-container"></ol>
 	</form>
 </div>
 <div id="lightbox"></div>
