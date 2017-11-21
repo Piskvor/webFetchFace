@@ -156,7 +156,9 @@ function searchInit() {
 	if (typeof gapi === 'undefined') {
 		return;
 	}
-	enableYtSearchUi(true);
+	if (!searchQueued) {
+		enableYtSearchUi(true);
+	}
 	// 1. Load the JavaScript client library.
 	gapi.load('client', gapiStart);
 }
