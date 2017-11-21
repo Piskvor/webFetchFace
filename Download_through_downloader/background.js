@@ -70,7 +70,7 @@ function notyf_setup_inpage__iggwrurefj() {
 				}) : "undefined" != typeof module && module.exports ? module.exports = Notyf : window.Notyf = Notyf
 			}();
 		}
-		window.notyf_iggwrurefj = new Notyf({delay: 10000});
+		window.notyf_iggwrurefj = new Notyf({delay: 15000});
 	}
 	return window.notyf_iggwrurefj;
 }
