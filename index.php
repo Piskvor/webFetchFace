@@ -254,6 +254,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 	} else {
 		header('Location: ?do=list');
 	}
+	header('Expires: ' . gmdate('r'));
 	exit;
 }
 
@@ -393,7 +394,7 @@ foreach ($result as $row) {
 	print "</td></tr>\n\n";
 
 	$rowCounter++;
-
+//	break;
 }
 print '</table>';
 
