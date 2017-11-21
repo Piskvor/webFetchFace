@@ -80,7 +80,7 @@ function share_native_inpage_finalCallback(notyf, requestedUrl, link, response, 
 var searchQueued = null;
 
 // Search for a specified string.
-function search(e) {
+function search() {
 	var q = $('#yt-query').val().trim();
 	if (q) {
 		searchQueued = q; // note that we're only keeping the last one
@@ -95,7 +95,7 @@ function searchUsableCallback(q) {
 	searchQueued = null;
 	var request = gapi.client.youtube.search.list({
 		q: q,
-		maxResults: 10,
+		maxResults: Math.ceil(ytMaxResults * 1.2), /* we need a buffer - not all are usable results! */
 		part: 'snippet'
 	});
 
@@ -111,17 +111,22 @@ function searchCompletedCallback(response, q) {
 	var items = response.items || [];
 	if (items.length > 0) {
 		$ytsc.empty();
+		var counter = 0;
 		for (var c = 0; c < items.length; c++) {
 			var item = items[c];
 			if (item.id.kind === "youtube#video") {
-				$ytsc.append('<li><a href="https://youtu.be/' + item.id.videoId + '" target="_blank" rel="noopener noreferrer">'
+				counter++;
+				$ytsc.append('<li class="yt-result" id="yt-result-' + counter + '"><a href="https://youtu.be/' + item.id.videoId + '" target="_blank" rel="noopener noreferrer">'
 					+ '<img class="yt-thumbnail" src="' + item.snippet.thumbnails.default.url + '"></a>'
 					+ '<div class="yt-texts"><div><a class="yt-found-item" href="?do=add&urls=' + encodeURIComponent('https://youtu.be/' + item.id.videoId) + '" data-video-url="https://youtu.be/' + item.id.videoId + '">' + item.snippet.title
 					+ '</a></div><div class="yt-description">' + item.snippet.description
 					+ '</div></div></li>');
+				if (counter >= ytMaxResults) {
+					break;
+				}
 			}
 		}
-		$ytsc.append('<li class="more-results"><a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener noreferrer">Další výsledky z <span class="actionButton button-youtube" title="YouTube"></span> (přibližně ' + response.result.pageInfo.totalResults + ')</a></li>');
+		$ytsc.append('<li class="yt-more-results"><a href="https://www.youtube.com/results?search_query=' + q + '" target="_blank" rel="noopener noreferrer">Další výsledky z <span class="actionButton button-youtube" title="YouTube"></span> (přibližně ' + response.result.pageInfo.totalResults + ')</a></li>');
 		$ytsc.find('.yt-found-item').on('click', share_native_inpage);
 	}
 
