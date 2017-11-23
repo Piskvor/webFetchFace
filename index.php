@@ -302,7 +302,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'include' . DIRECTORY_SEPARATOR
 print '<table class="queue-list" border=0>';
 print "<tr><th>Náhled</th><th>Jméno</th><th>Stav</th><th>Datum</th><th></th></tr>\n\n";
 $result = $db->query(
-	'SELECT * FROM files WHERE id in(592) and FileStatus != '
+	'SELECT * FROM files WHERE FileStatus != '
 	. DownloadStatus::STATUS_DISCARDED . ' ORDER BY FileStatus = '
 	. DownloadStatus::STATUS_DOWNLOADING . ' DESC, FileStatus = '
 	. DownloadStatus::STATUS_FINISHED
