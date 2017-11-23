@@ -327,7 +327,7 @@ foreach ($result as $row) {
 			$image = $row['ThumbFileName'];
 		}
 	}
-	if ($image) {
+	if ($image && file_exists($image)) {
 		$class = array(
 			'preview-image'
 		);
@@ -340,6 +340,8 @@ foreach ($result as $row) {
 			$class[] = 'lazy';
 		}
 		print $image . '" class="' . implode(' ', $class) . '"/></a>';
+	} else {
+		print '<div class="preview-image no-image">I</div>';
 	}
 	print "</td>\n";
 	print '<td class="rowTitle">';
