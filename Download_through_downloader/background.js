@@ -150,10 +150,17 @@ if (typeof browser !== 'undefined' && browser) {
 
 if (typeof browser !== 'undefined' && browser) {
 
+	const downloaderLink = "https://dl.piskvor.org/downloader/";
+
+	browser.browserAction.onClicked.addListener(function () {
+		browser.tabs.create({
+			url: downloaderLink,
+			active: true
+		});
+	});
 	// actually sends the request out - by opening a new tab
 	function osm_piskvor_org_share(e) {
 		// we need to hard-code this, downloader doesn't let us configure
-		const downloaderLink = "https://dl.piskvor.org/downloader/";
 		const downloaderUrl = downloaderLink + "?do=add&isScript=1";
 
 		var url;
