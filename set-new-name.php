@@ -107,6 +107,9 @@ foreach ($result as $row) {
 				$oldfilename = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR . $filename);
 				if (rename($oldfilename,$newfilename)) {
 					$prepFilepath->execute(array($newdir,$id));
+				} else if (file_exists($newfilename)) {
+					$prepFilepath->execute(array($newfilename, $id));
+					echo "found in new location\n";
 				}
 			}
 			continue;
