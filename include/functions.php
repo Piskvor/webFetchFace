@@ -30,7 +30,7 @@ function getFilenameParts($fileName, $position=-1) {
 
 function getSanitizedName($displayId, $title, $fileName) {
 	$ext = getFilenameParts($fileName,1);
-		
+
 	$convertedName =	trim($title);
 //	$convertedName = str_replace('-', '-',$convertedName);
 	$convertedName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $convertedName);
@@ -112,4 +112,25 @@ function createThumbnail($image_name,$new_width,$new_height,$uploadDir,$moveToDi
 	imagedestroy($src_img);
 
 	return $result ? $new_thumb_loc : null;
+}
+
+function updateTinyThumbnail(
+	$db, $id,
+	$thumbFileName, $thumbnailWidth,
+	$thumbnailWidth, $uploadDir, $moveToDir, $prefix = '_tiny'
+)
+{
+	$tinyFilename = createThumbnail(
+		$thumbFileName, $thumbnailWidth,
+		$thumbnailWidth, $uploadDir, $moveToDir, $prefix
+	);
+	if ($tinyFilename) {
+		$prepThumbnail = $db->prepare(
+			'UPDATE files SET TinyFileName=? WHERE Id=?'
+		);
+		$prepThumbnail->execute(
+			array($tinyFilename, $id)
+		);
+		chmod($tinyFilename, 0664);
+	}
 }

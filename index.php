@@ -201,19 +201,10 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 							fclose($fp);
 							chmod($DLFile, 0664);
 
-							$tinyFilename = createThumbnail(
-								$thumbFileName, $thumbnailWidth,
+							updateTinyThumbnail($db, $id,
+							$thumbFileName, $thumbnailWidth,
 								$thumbnailWidth, $thumbPath, $thumbPath, '_tiny'
 							);
-							if ($tinyFilename) {
-								$prepThumbnail = $db->prepare(
-									'UPDATE files SET TinyFileName=? WHERE Id=?'
-								);
-								$prepThumbnail->execute(
-									array($tinyFilename, $id)
-								);
-								chmod($tinyFilename, 0664);
-							}
 						}
 					} else {
 						$prepStatus->execute(
