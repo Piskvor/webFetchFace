@@ -51,8 +51,9 @@ foreach ($result as $row) {
 		}
 
 		$newThumbName = $dir . DIRECTORY_SEPARATOR . getThumbName($id, $displayId, '_generated_ffmpeg', true);
-		$command = $ffmpeg . ' -ss ' . $startSeconds . ' -t ' . $remainingSeconds . ' -i "' . $fpn . '" -vf "thumbnail,scale=' . $bigThumbnailWidth . ':' . $bigThumbnailHeight .'" -frames:v 1 -vsync vfr -vf fps=fps=1/600 "' . $newThumbName . '" -y';
-//		echo $command,"\n";
+
+		$command = getResizeCommand($ffmpeg, $startSeconds, $remainingSeconds, $fpn, $bigThumbnailWidth, $bigThumbnailHeight, $newThumbName);
+		echo $command,"\n";
 		exec($command);
 		if (file_exists($newThumbName)) {
 			$prepNewThumbnail->execute(

@@ -220,3 +220,7 @@ function getVideoInfo($ffprobe, $id, $videoFilename, $tmpdir) {
 	$vi = json_decode($json, true);
 	return $vi;
 }
+
+function getResizeCommand($ffmpeg, $startSeconds, $remainingSeconds, $fpn, $bigThumbnailWidth, $bigThumbnailHeight, $newThumbName) {
+	return $ffmpeg . ' -ss ' . $startSeconds . ' -t ' . $remainingSeconds . ' -i "' . $fpn . '" -vf "thumbnail,scale=' . $bigThumbnailWidth . ':' . $bigThumbnailHeight .'" -frames:v 1 -vsync vfr -vf fps=fps=1/600 "' . $newThumbName . '" -y';
+}
