@@ -148,23 +148,27 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 					$jsonData = json_decode(
 						file_get_contents($jsonFilename), true, 20
 					);
+					$thumbFileName = null;
 					if (count($jsonData) > 0) {
 						$now = date($sqlDate);
-						$thumbFileName = preg_replace(
-							'/.jpe?g$/i', '.jpg',
-							preg_replace(
-								'/[^A-Za-z0-9_-]/', '_',
-								$id . '_' . $jsonData['id'] . '_' . basename(
-									$jsonData['thumbnail']
+						if (!empty($jsonData['thumbnail'])) {
+							$thumbFileName = preg_replace(
+								'/.jpe?g$/i', '.jpg',
+								preg_replace(
+									'/[^A-Za-z0-9_-]/', '_',
+									$id . '_' . $jsonData['id'] . '_'
+									. basename(
+										$jsonData['thumbnail']
+									)
 								)
-							)
-						);
-						if (!preg_match('/\.jpg$/', $thumbFileName)) {
-							$thumbFileName .= '.jpg';
+							);
+							if (!preg_match('/\.jpg$/', $thumbFileName)) {
+								$thumbFileName .= '.jpg';
+							}
+							$thumbPath = $relDir . DIRECTORY_SEPARATOR . $host;
+							$thumbFilePath = $thumbPath . DIRECTORY_SEPARATOR
+								. $thumbFileName;
 						}
-						$thumbPath = $relDir . DIRECTORY_SEPARATOR . $host;
-						$thumbFilePath = $thumbPath . DIRECTORY_SEPARATOR
-							. $thumbFileName;
 						$prepStatusJson = $db->prepare(
 							'UPDATE files SET FileStatus=?, FileName=?, DisplayId=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
 						);
