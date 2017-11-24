@@ -19,16 +19,10 @@ $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
 $db = new DbConnection($filesDb);
 
-$sqlDate = 'Y-m-d H:i:s';
-$isoDate = 'c';
-$humanDate = 'j.n.Y H:i:s';
-
 $result = $db->query('SELECT Id,ThumbFileName FROM files WHERE MetadataFileName IS NULL ORDER BY Id DESC');
 
 $changedFiles = 0;
 $toDownload = array();
-$thumbnailWidth = 120;
-
 
 $prepThumbnail = $db->prepare('UPDATE files SET MetadataFileName=? WHERE Id=?');
 

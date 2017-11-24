@@ -1,6 +1,12 @@
 <?php
 
+/** @noinspection UsingInclusionOnceReturnValueInspection */
 @include_once __DIR__ . DIRECTORY_SEPARATOR . 'dirs.php';
+
+$thumbnailWidth = 120;
+$sqlDate = 'Y-m-d H:i:s';
+$isoDate = 'c';
+$humanDate = 'j.n.Y H:i:s';
 
 if (!function_exists('getDirs')){
 	function getDirs(){

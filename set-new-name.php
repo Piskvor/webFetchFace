@@ -18,16 +18,10 @@ $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
 $db = new DbConnection($filesDb);
 
-$sqlDate = 'Y-m-d H:i:s';
-$isoDate = 'c';
-$humanDate = 'j.n.Y H:i:s';
-
 $result = $db->query('SELECT Id,Title,FileName,FilePath,MetadataFileName,DisplayId FROM files WHERE FileNameConverted IS NULL AND DownloadedAt IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
 
 $changedFiles = 0;
 $toDownload = array();
-$thumbnailWidth = 120;
-
 
 $prepConverted = $db->prepare('UPDATE files SET FileNameConverted=? WHERE Id=?');
 
@@ -36,7 +30,7 @@ foreach ($result as $row) {
 	$id = $row['Id'];
 	$filepath = $row['FilePath'];
 	$filenameOld = $row['FileName'];
-	
+
 	$parts = getFilenameParts($filenameOld);
 	$filenameCandidate = preg_replace('~/+~', '/', $filepath . DIRECTORY_SEPARATOR . $parts[0]);
 	$filePathOld = preg_replace('~/+~', '/', $filepath . DIRECTORY_SEPARATOR . $filenameOld);
@@ -60,7 +54,7 @@ foreach ($result as $row) {
 		echo $filePathOld , "\n",$filename , "\n\n";
 	}
 	*/
-	
+
 	if($row['DisplayId']) {
 		$did = $row['DisplayId'];
 	} else if ($row['MetadataFileName']) {
@@ -73,7 +67,7 @@ foreach ($result as $row) {
 	$did .= '__' . $id;
 	$newFilename = getSanitizedName($did,$row['Title'],$filename);
 	$newFilenamePath = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR . $newFilename);
-	
+
 	if ($filename != $newFilenamePath) {
 		if(rename($filename,$newFilenamePath)) {
 			$prepConverted->execute(array($newFilename,$id));
@@ -88,7 +82,7 @@ $result = $db->query('SELECT Id,Title,FileNameConverted,FilePath,MetadataFileNam
 . ' WHERE FilePath ="files/"  AND FileNameConverted IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
 
 $dirs = getDirs();
-	
+
 $prepFilepath  = $db->prepare('UPDATE files SET FilePath=? WHERE Id=?');
 
 foreach ($result as $row) {
@@ -99,9 +93,9 @@ foreach ($result as $row) {
 	$lcfn = strtolower($filename);
 	foreach ($dirs as $match => $dir) {
 		if (strpos($lcfn, $match) !== false) {
-			$newdir = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR 
+			$newdir = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR
 				. 'pohadky' . DIRECTORY_SEPARATOR . 'rpi' . DIRECTORY_SEPARATOR . $dir);
-				
+
 			if (is_dir($newdir)) {
 				$newfilename = str_replace('_-_','-', preg_replace('~/+~', '/',$newdir . DIRECTORY_SEPARATOR . $filename));
 				$oldfilename = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR . $filename);

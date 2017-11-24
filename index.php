@@ -20,11 +20,6 @@ $ytd = '/home/honza/bin/youtube-dl '
 $relDir = 'tmp';
 $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
-$thumbnailWidth = 120;
-$sqlDate = 'Y-m-d H:i:s';
-$isoDate = 'c';
-$humanDate = 'j.n.Y H:i:s';
-
 $noImage = isset($_REQUEST['noImage']);
 $isScript = isset($_REQUEST['isScript']);
 
