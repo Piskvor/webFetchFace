@@ -17,6 +17,10 @@ $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 $db = new DbConnection($filesDb);
 
 $result = $db->query('SELECT Id,FileName,FileNameConverted,FilePath,ThumbFileName,UrlDomain,DisplayId FROM files WHERE TinyFileName is NULL AND FileStatus=100 ORDER BY Id DESC');
+$prepNewThumbnail = $db->prepare(
+	'UPDATE files SET ThumbFileName=? WHERE Id=?'
+);
+
 
 foreach ($result as $row) {
 	//var_dump($row);
@@ -38,14 +42,34 @@ foreach ($result as $row) {
 	} else if (file_exists($fpn)) {
 		$dir = $relDir . DIRECTORY_SEPARATOR . $host;
 		$aspectRatio = getAspectRatio($ffprobe, $id,$fpn,$dir);
-		$newThumbName = $dir . DIRECTORY_SEPARATOR . getThumbName($id, $displayId, '_generated_ffmpeg');
-		$command = $ffmpeg . ' -i "' . $fpn . '" -vf "thumbnail,scale=800:" -frames:v 1 "' . $newThumbName . '"';
-		echo $command,"\n";
-		//exec($command);
+		$bigThumbnailHeight = floor( $bigThumbnailWidth / $aspectRatio);
+
+		$duration = getDuration($ffprobe, $id,$fpn,$dir);
+		$remainingSeconds = $duration - $startSeconds;
+		if ($remainingSeconds > $endSeconds) {
+			$remainingSeconds -= $endSeconds;
+		}
+
+		$newThumbName = $dir . DIRECTORY_SEPARATOR . getThumbName($id, $displayId, '_generated_ffmpeg', true);
+		$command = $ffmpeg . ' -ss ' . $startSeconds . ' -t ' . $remainingSeconds . ' -i "' . $fpn . '" -vf "thumbnail,scale=' . $bigThumbnailWidth . ':' . $bigThumbnailHeight .'" -frames:v 1 -vsync vfr -vf fps=fps=1/600 "' . $newThumbName . '" -y';
+//		echo $command,"\n";
+		exec($command);
+		if (file_exists($newThumbName)) {
+			$prepNewThumbnail->execute(
+				array(
+					$newThumbName, $id
+				)
+			);
+			$newTTN = updateTinyThumbnail(
+				$db, $id,
+				basename($newThumbName), $thumbnailWidth,
+				$thumbnailWidth, dirname($newThumbName), $moveToDir, $prefix = '_tiny'
+			);
+		}
 	} else {
 		echo "No such file: ", $fpn , "\n";
 	}
-}exit;
+}
 
 $result = $db->query('SELECT Id,Title,FileName,FilePath,MetadataFileName,DisplayId FROM files WHERE FileNameConverted IS NULL AND DownloadedAt IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
 

@@ -15,6 +15,9 @@ $ytd = '/home/honza/bin/youtube-dl '
 	. '--ffmpeg-location ' . $dn ;
 
 $thumbnailWidth = 120;
+$bigThumbnailWidth = 800;
+$startSeconds = 60;
+$endSeconds = 60;
 $sqlDate = 'Y-m-d H:i:s';
 $isoDate = 'c';
 $humanDate = 'j.n.Y H:i:s';
@@ -133,13 +136,13 @@ function createThumbnail($image_name,$new_width,$new_height,$uploadDir,$moveToDi
 
 function updateTinyThumbnail(
 	$db, $id,
-	$thumbFileName, $thumbnailWidth,
-	$thumbnailWidth, $uploadDir, $moveToDir, $prefix = '_tiny'
+	$thumbFileName, $thumbnailMaxWidth,
+	$thumbnailMaxHeight, $uploadDir, $moveToDir, $prefix = '_tiny'
 )
 {
 	$tinyFilename = createThumbnail(
-		$thumbFileName, $thumbnailWidth,
-		$thumbnailWidth, $uploadDir, $moveToDir, $prefix
+		$thumbFileName, $thumbnailMaxWidth,
+		$thumbnailMaxHeight, $uploadDir, $moveToDir, $prefix
 	);
 	if ($tinyFilename) {
 		$prepThumbnail = $db->prepare(
@@ -153,7 +156,7 @@ function updateTinyThumbnail(
 	return $tinyFilename;
 }
 
-function getThumbName($id, $jsonId, $originalFilename)
+function getThumbName($id, $jsonId, $originalFilename, $appendExtension = true)
 {
 	$thumbFileName = preg_replace(
 		'/.jpe?g$/i', '.jpg',
@@ -165,13 +168,25 @@ function getThumbName($id, $jsonId, $originalFilename)
 			)
 		)
 	);
-	if (!preg_match('/\.jpg$/', $thumbFileName)) {
+	if ($appendExtension && !preg_match('/\.jpg$/', $thumbFileName)) {
 		$thumbFileName .= '.jpg';
 	}
 	return $thumbFileName;
 }
 
+function getDuration($ffprobe, $id,$fpn,$dir) {
+	$vi = getVideoInfo($ffprobe, $id,$fpn,$dir);
+	$duration = null;
+	foreach ($vi['streams'] as $stream) {
+		if (!empty($stream['duration'])) {
+			$duration = (int) $stream['duration'];
+		}
+	}
+	return $duration;
+}
+
 function getAspectRatio($ffprobe, $id,$fpn,$dir) {
+	$ratio = 4/3;
 	$vi = getVideoInfo($ffprobe, $id,$fpn,$dir);
 	$ar = null;
 	foreach ($vi['streams'] as $stream) {
@@ -179,8 +194,13 @@ function getAspectRatio($ffprobe, $id,$fpn,$dir) {
 			$ar = trim($stream['display_aspect_ratio']);
 		}
 	}
-	echo $ar;
-	//exit;
+	if (strpos($ar,':') !== false) {
+		$ratios = explode(':', $ar);
+		if (substr_count($ar,':') === 1) {
+			$ratio = $ratios[0] / $ratios[1];
+		}
+	}
+	return $ratio;
 }
 
 function getVideoInfo($ffprobe, $id, $videoFilename, $tmpdir) {
