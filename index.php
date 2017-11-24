@@ -162,13 +162,25 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 
 						$urlAdded[] = $url;
 						$titleAdded[] = $jsonData['title'];
+						$thumbnailUrl = !empty($jsonData['thumbnail']) ? $jsonData['thumbnail'] : null;
+						if (!$thumbnailUrl) {
+							if (isset($jsonData['thumbnails']) && is_array($jsonData['thumbnails'])) {
+								foreach ($jsonData['thumbnails'] as $thumbnail) {
+									if (!empty($thumbnail['url'])) {
+										$thumbnailUrl = $thumbnail['url'];
+										break;
+									}
+								}
+							}
+						}
+
 						if (!empty($jsonData['thumbnail'])
 							&& !file_exists(
 								$thumbFilePath
 							)
 						) {
 							$DLFile = $thumbFilePath;
-							$DLURL = $jsonData['thumbnail'];
+							$DLURL = $thumbnailUrl;
 							$fp = fopen($DLFile, 'wb+');
 							$ch = curl_init($DLURL);
 							curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -332,6 +344,7 @@ foreach ($result as $row) {
 	}
 	print '" title="' . $row['FileStatus'] . '"';
 	print ' data-filestatus="' . $row['FileStatus'] . '"';
+	print ' data-metadatafilename="' . $row['MetadataFileName'] . '"';
 	print ">\n";
 	if (DownloadStatus::isError($row['FileStatus'])) {
 		print '<a href="' . $row['MetadataFileName'] . '">'
