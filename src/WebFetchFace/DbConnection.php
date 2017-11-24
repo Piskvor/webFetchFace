@@ -42,6 +42,7 @@ class DbConnection
             TinyFileName TEXT,
             UrlDomain TEXT,
             DomainId TEXT,
+            DisplayId TEXT,
             CreatedAt DATETIME,
             MetadataDownloadedAt DATETIME,
             QueuedAt DATETIME,
