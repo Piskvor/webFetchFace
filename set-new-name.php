@@ -18,6 +18,30 @@ $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
 $db = new DbConnection($filesDb);
 
+$result = $db->query('SELECT Id,FileName,FileNameConverted,FilePath,ThumbFileName,UrlDomain FROM files WHERE TinyFileName is NULL AND FileStatus=100 ORDER BY Id DESC');
+
+foreach ($result as $row) {
+	//var_dump($row);
+	$id = $row['Id'];
+	$filePath = $row['FilePath'];
+	$fileName = !empty($row['FileNameConverted']) ? $row['FileNameConverted'] : $row['FileName'];
+	$fpn = $filePath . DIRECTORY_SEPARATOR . $fileName;
+	$host = $row['UrlDomain'];
+	$thumbFileName = $row['ThumbFileName'];
+	$uploadDir = $moveToDir = $relDir . DIRECTORY_SEPARATOR . $host;
+	if (!empty($thumbFileName) && file_exists($thumbFileName)) {
+		$newTTN = updateTinyThumbnail(
+			$db, $id,
+			$thumbFileName, $thumbnailWidth,
+			$thumbnailWidth, $uploadDir, $moveToDir, $prefix = '_tiny'
+		);
+		echo "New thumbnail: ", $newTTN, "\n";
+	} else if (file_exists($fpn)) {
+	} else {
+		echo "No such file: ", $fpn , "\n";
+	}
+}
+
 $result = $db->query('SELECT Id,Title,FileName,FilePath,MetadataFileName,DisplayId FROM files WHERE FileNameConverted IS NULL AND DownloadedAt IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
 
 $changedFiles = 0;

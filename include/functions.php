@@ -139,4 +139,5 @@ function updateTinyThumbnail(
 		);
 		chmod($tinyFilename, 0664);
 	}
+	return $tinyFilename;
 }
