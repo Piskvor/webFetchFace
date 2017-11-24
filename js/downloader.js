@@ -47,6 +47,13 @@ $(document).ready(function () {
 		delay: 2000
 	});
 	$('.timeago').timeago();
+	$('.rowStatus').on('dblclick', function (dblClickEvt) {
+		var $rs = $(dblClickEvt.target);
+		var md = $rs.data('metadatafilename');
+		if (md) {
+			window.open(md);
+		}
+	});
 	$('button').on('dblclick', function () {
 		return false;
 	});
