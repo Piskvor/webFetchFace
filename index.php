@@ -141,19 +141,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 					if (count($jsonData) > 0) {
 						$now = date($sqlDate);
 						if (!empty($jsonData['thumbnail'])) {
-							$thumbFileName = preg_replace(
-								'/.jpe?g$/i', '.jpg',
-								preg_replace(
-									'/[^A-Za-z0-9_-]/', '_',
-									$id . '_' . $jsonData['id'] . '_'
-									. basename(
-										$jsonData['thumbnail']
-									)
-								)
-							);
-							if (!preg_match('/\.jpg$/', $thumbFileName)) {
-								$thumbFileName .= '.jpg';
-							}
+							$thumbFileName = getThumbName($id, $jsonData['id'], $jsonData['thumbnail']);
 							$thumbPath = $relDir . DIRECTORY_SEPARATOR . $host;
 							$thumbFilePath = $thumbPath . DIRECTORY_SEPARATOR
 								. $thumbFileName;

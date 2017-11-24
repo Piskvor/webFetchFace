@@ -4,13 +4,15 @@
 @include_once __DIR__ . DIRECTORY_SEPARATOR . 'dirs.php';
 
 $ffmpeg = '/home/honza/bin/ffmpeg';
+$dn = dirname($ffmpeg);
+$ffprobe = $dn . DIRECTORY_SEPARATOR . 'ffprobe';
 
 $filesDb = 'downloads.sqlite';
 $relDir = 'tmp';
 $ytd = '/home/honza/bin/youtube-dl '
 	. '--restrict-filenames '
 	. '--prefer-ffmpeg '
-	. '--ffmpeg-location ' . dirname($ffmpeg);
+	. '--ffmpeg-location ' . $dn ;
 
 $thumbnailWidth = 120;
 $sqlDate = 'Y-m-d H:i:s';
@@ -149,4 +151,52 @@ function updateTinyThumbnail(
 		chmod($tinyFilename, 0664);
 	}
 	return $tinyFilename;
+}
+
+function getThumbName($id, $jsonId, $originalFilename)
+{
+	$thumbFileName = preg_replace(
+		'/.jpe?g$/i', '.jpg',
+		preg_replace(
+			'/[^A-Za-z0-9_-]/', '_',
+			$id . '_' . $jsonId . '_'
+			. basename(
+				$originalFilename
+			)
+		)
+	);
+	if (!preg_match('/\.jpg$/', $thumbFileName)) {
+		$thumbFileName .= '.jpg';
+	}
+	return $thumbFileName;
+}
+
+function getAspectRatio($ffprobe, $id,$fpn,$dir) {
+	$vi = getVideoInfo($ffprobe, $id,$fpn,$dir);
+	$ar = null;
+	foreach ($vi['streams'] as $stream) {
+		if (!empty($stream['codec_type']) && $stream['codec_type'] == 'video') {
+			$ar = trim($stream['display_aspect_ratio']);
+		}
+	}
+	echo $ar;
+	//exit;
+}
+
+function getVideoInfo($ffprobe, $id, $videoFilename, $tmpdir) {
+	$jsonFile = $tmpdir . DIRECTORY_SEPARATOR . $id . '_ffprobe.json';
+	$json = '';
+	if (!file_exists($jsonFile)) {
+		exec(
+			$ffprobe . ' -i "' . $videoFilename . '" -show_streams -print_format json',
+			$output
+		);
+		$json = implode("\n",$output);
+		file_put_contents($jsonFile,$json);
+		chmod($jsonFile, 0664);
+	} else {
+		$json = file_get_contents($jsonFile);
+	}
+	$vi = json_decode($json, true);
+	return $vi;
 }

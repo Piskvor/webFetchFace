@@ -16,11 +16,12 @@ $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
 $db = new DbConnection($filesDb);
 
-$result = $db->query('SELECT Id,FileName,FileNameConverted,FilePath,ThumbFileName,UrlDomain FROM files WHERE TinyFileName is NULL AND FileStatus=100 ORDER BY Id DESC');
+$result = $db->query('SELECT Id,FileName,FileNameConverted,FilePath,ThumbFileName,UrlDomain,DisplayId FROM files WHERE TinyFileName is NULL AND FileStatus=100 ORDER BY Id DESC');
 
 foreach ($result as $row) {
 	//var_dump($row);
 	$id = $row['Id'];
+	$displayId = $row['DisplayId'];
 	$filePath = $row['FilePath'];
 	$fileName = !empty($row['FileNameConverted']) ? $row['FileNameConverted'] : $row['FileName'];
 	$fpn = $filePath . DIRECTORY_SEPARATOR . $fileName;
@@ -35,10 +36,16 @@ foreach ($result as $row) {
 		);
 		echo "New thumbnail: ", $newTTN, "\n";
 	} else if (file_exists($fpn)) {
+		$dir = $relDir . DIRECTORY_SEPARATOR . $host;
+		$aspectRatio = getAspectRatio($ffprobe, $id,$fpn,$dir);
+		$newThumbName = $dir . DIRECTORY_SEPARATOR . getThumbName($id, $displayId, '_generated_ffmpeg');
+		$command = $ffmpeg . ' -i "' . $fpn . '" -vf "thumbnail,scale=800:" -frames:v 1 "' . $newThumbName . '"';
+		echo $command,"\n";
+		//exec($command);
 	} else {
 		echo "No such file: ", $fpn , "\n";
 	}
-}
+}exit;
 
 $result = $db->query('SELECT Id,Title,FileName,FilePath,MetadataFileName,DisplayId FROM files WHERE FileNameConverted IS NULL AND DownloadedAt IS NOT NULL AND FileStatus=100 ORDER BY Id DESC');
 
