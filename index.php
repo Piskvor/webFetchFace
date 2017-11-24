@@ -12,12 +12,6 @@ require_once __DIR__ . DIRECTORY_SEPARATOR
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-$filesDb = 'downloads.sqlite';
-$ytd = '/home/honza/bin/youtube-dl '
-		. '--restrict-filenames '
-		. '--prefer-ffmpeg '
-		. '--ffmpeg-location /home/honza/bin';
-$relDir = 'tmp';
 $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
 $noImage = isset($_REQUEST['noImage']);

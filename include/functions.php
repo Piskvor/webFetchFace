@@ -3,6 +3,15 @@
 /** @noinspection UsingInclusionOnceReturnValueInspection */
 @include_once __DIR__ . DIRECTORY_SEPARATOR . 'dirs.php';
 
+$ffmpeg = '/home/honza/bin/ffmpeg';
+
+$filesDb = 'downloads.sqlite';
+$relDir = 'tmp';
+$ytd = '/home/honza/bin/youtube-dl '
+	. '--restrict-filenames '
+	. '--prefer-ffmpeg '
+	. '--ffmpeg-location ' . dirname($ffmpeg);
+
 $thumbnailWidth = 120;
 $sqlDate = 'Y-m-d H:i:s';
 $isoDate = 'c';
