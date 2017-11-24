@@ -103,7 +103,7 @@ foreach ($result as $row) {
 				. 'pohadky' . DIRECTORY_SEPARATOR . 'rpi' . DIRECTORY_SEPARATOR . $dir);
 				
 			if (is_dir($newdir)) {
-				$newfilename = preg_replace('~/+~', '/',$newdir . DIRECTORY_SEPARATOR . $filename);
+				$newfilename = str_replace('_-_','-', preg_replace('~/+~', '/',$newdir . DIRECTORY_SEPARATOR . $filename));
 				$oldfilename = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR . $filename);
 				if (rename($oldfilename,$newfilename)) {
 					$prepFilepath->execute(array($newdir,$id));
