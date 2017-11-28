@@ -129,6 +129,7 @@ foreach ($result as $row) {
 	if ($filename != $newFilenamePath) {
 		if(rename($filename,$newFilenamePath)) {
 			$prepConverted->execute(array($newFilename,$id));
+			echo "rename: $filename -> $newFilenamePath\n";
 		} else {
 			echo "cannot update $id\n";
 		}
