@@ -85,17 +85,18 @@ for i in $ROWS ; do
 	if [ -d "$DIR_NAME/$TMP_DIR/$URLDOMAIN" ]; then
 		TMP_URL_DIR="$DIR_NAME/$TMP_DIR/$URLDOMAIN"
 	fi
+	OUTFILE="$TMP_URL_DIR/$ID.out.txt"
 
     COMMAND="/home/honza/bin/youtube-dl $YTD_OPTS $OPTS $URL"
 #    echo $COMMAND
 #    exit
-	date >> "$TMP_URL_DIR/$ID.out"
-	chgrp www-data "$TMP_URL_DIR/$ID.out"
-	chmod 664 "$TMP_URL_DIR/$ID.out"
+	date >> ${OUTFILE}
+	chgrp www-data ${OUTFILE}
+	chmod 664 ${OUTFILE}
     set +e
-    eval $COMMAND >> "$TMP_URL_DIR/$ID.out"
+    eval $COMMAND >> ${OUTFILE}
     RESULT=$?
-	date >> "$TMP_URL_DIR/$ID.out"
+	date >> ${OUTFILE}
     set -e
     if [ $RESULT -eq 0 ]; then
 
