@@ -88,14 +88,20 @@ foreach ($result as $row) {
 	$id = $row['Id'];
 	$filepath = $row['FilePath'];
 	$filenameOld = $row['FileName'];
+	$displayId = $row['DisplayId'];
 
 	$parts = getFilenameParts($filenameOld);
 	$filenameCandidate = preg_replace('~/+~', '/', $filepath . DIRECTORY_SEPARATOR . $parts[0]);
 	$filePathOld = preg_replace('~/+~', '/', $filepath . DIRECTORY_SEPARATOR . $filenameOld);
-	$path = glob($filenameCandidate .'*');
+	$path1 = glob($filenameCandidate .'*');
+    $path2 = glob(preg_replace('~/+~', '/', $filepath . '/*__' . $id . '.*'));
+    $path3 = glob(preg_replace('~/+~', '/', $filepath . '/*' . $displayId . '*'));
+    $path = array_merge($path1, $path2, $path3);
 	if (!count($path)) {
-		continue;
+       continue;
 	}
+//	var_dump($path);exit;
+
 	$filename = '';
 	foreach ($path as $foundFile) {
 		if (preg_match('/\.(jpg|jpeg|mp3|json|m4a)$/i',$foundFile)) {
@@ -115,11 +121,14 @@ foreach ($result as $row) {
 
 	if($row['DisplayId']) {
 		$did = $row['DisplayId'];
-	} else if ($row['MetadataFileName']) {
+	}
+	if ($row['MetadataFileName']) {
 		$data = getJsonFile($row['MetadataFileName']);
-		$did = getDisplayId($data);
+		if (!$did) {
+            $did = getDisplayId($data);
+        }
 	} else {
-		//echo "No displayId, no metadata: $id";
+		echo "No displayId, no metadata: $id\n";
 		continue;
 	}
 	$did .= '__' . $id;
