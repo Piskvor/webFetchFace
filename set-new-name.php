@@ -98,7 +98,7 @@ foreach ($result as $row) {
 	}
 	$filename = '';
 	foreach ($path as $foundFile) {
-		if (preg_match('/\.(jpg|mp3|json)$/',$foundFile)) {
+		if (preg_match('/\.(jpg|jpeg|mp3|json|m4a)$/i',$foundFile)) {
 			continue;
 		}
 		$filename = $foundFile;
