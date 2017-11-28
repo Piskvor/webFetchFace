@@ -134,9 +134,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 				chmod($jsonFilename, 0777);
 				@chgrp($jsonFilename, 'honza');
 				if (file_exists($jsonFilename)) {
-					$jsonData = json_decode(
-						file_get_contents($jsonFilename), true, 20
-					);
+					$jsonData = getJsonFile($jsonFilename);
 					$thumbFileName = null;
 					if (count($jsonData) > 0) {
 						$now = date($sqlDate);

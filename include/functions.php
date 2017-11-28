@@ -61,6 +61,10 @@ function getSanitizedName($displayId, $title, $fileName) {
 	return $convertedName;
 }
 
+function getJsonFile($fname) {
+	return json_decode(file_get_contents($fname),true,20);
+}
+
 function getDisplayId($data) {
 	return isset($data['id']) ? $data['id'] : $data['display_id'];
 }

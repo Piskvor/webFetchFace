@@ -16,14 +16,13 @@ $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
 $db = new DbConnection($filesDb);
 
-$result = $db->query('SELECT Id,FileName,FileNameConverted,FilePath,ThumbFileName,UrlDomain,DisplayId FROM files WHERE TinyFileName is NULL AND FileStatus=100 ORDER BY Id DESC');
+$result = $db->query('SELECT Id,FileName,MetadataFileName,FileNameConverted,FilePath,ThumbFileName,UrlDomain,DisplayId FROM files WHERE TinyFileName is NULL AND FileStatus=100 ORDER BY Id DESC');
 $prepNewThumbnail = $db->prepare(
 	'UPDATE files SET ThumbFileName=? WHERE Id=?'
 );
 
 
 foreach ($result as $row) {
-	//var_dump($row);
 	$id = $row['Id'];
 	$displayId = $row['DisplayId'];
 	$filePath = $row['FilePath'];
@@ -32,7 +31,12 @@ foreach ($result as $row) {
 	$host = $row['UrlDomain'];
 	$thumbFileName = $row['ThumbFileName'];
 	$uploadDir = $moveToDir = $relDir . DIRECTORY_SEPARATOR . $host;
-	if (!empty($thumbFileName) && file_exists($thumbFileName)) {
+
+	if (empty($thumbFileName) && file_exists($row['MetadataFileName'])) {
+		$jsonData = getJsonFile($row['MetadataFileName']);
+	}
+
+	if (!empty($thumbFileName) && file_exists($thumbFileName)) { // create from thumbfile
 		$newTTN = updateTinyThumbnail(
 			$db, $id,
 			$thumbFileName, $thumbnailWidth,
@@ -94,7 +98,7 @@ foreach ($result as $row) {
 	}
 	$filename = '';
 	foreach ($path as $foundFile) {
-		if (preg_match('/\.(jpg|mp3)$/',$foundFile)) {
+		if (preg_match('/\.(jpg|mp3|json)$/',$foundFile)) {
 			continue;
 		}
 		$filename = $foundFile;
@@ -112,7 +116,7 @@ foreach ($result as $row) {
 	if($row['DisplayId']) {
 		$did = $row['DisplayId'];
 	} else if ($row['MetadataFileName']) {
-		$data = json_decode(file_get_contents($row['MetadataFileName']),true,20);
+		$data = getJsonFile($row['MetadataFileName']);
 		$did = getDisplayId($data);
 	} else {
 		//echo "No displayId, no metadata: $id";

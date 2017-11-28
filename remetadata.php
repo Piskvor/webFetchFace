@@ -53,7 +53,7 @@ $prepDisplayId = $db->prepare('UPDATE files SET DisplayId=? WHERE Id=?');
 
 foreach ($result as $row) {
 	$id = $row['Id'];
-	$data = json_decode(file_get_contents($row['MetadataFileName']),true, 20);
+	$data = getJsonFile($row['MetadataFileName']);
 
 	if (!$data) {
 		echo "Not found: $id";
