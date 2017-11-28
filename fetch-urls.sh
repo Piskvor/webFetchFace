@@ -6,14 +6,25 @@ JMA_SP="q5tDF"
 MAJA_SP=""
 BN="threepio download"
 FILES_DIR="files/"
+TMP_DIR="tmp/"
 trap "exit 1" INT
 
 export DIR_NAME=$(dirname $0)
 cd $DIR_NAME;
 DIR_NAME=$(pwd)
 MY_PID=$$
+LOCKFILE=$DIR_NAME/$TMP_DIR/fetch-urls.lock
+
+exec 9>$LOCKFILE
+if ! flock -n 9  ; then
+	echo "$$: another instance is running";
+	exit 100
+fi
+echo "running $$"
+touch $LOCKFILE
+
 export SQLITE_DB=$DIR_NAME/downloads.sqlite
-YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin --skip-unavailable-fragments --add-metadata --limit-rate=2M'
+YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin --skip-unavailable-fragments --add-metadata --limit-rate=2M --fixup=detect_or_warn --embed-thumbnail'
 
 cp $DIR_NAME/downloads.list $DIR_NAME/downloads.tmp.list
 echo -n ''>$DIR_NAME/downloads.list
@@ -57,12 +68,20 @@ for i in $ROWS ; do
     sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=4,DownloadStartedAt=DATETIME('now', 'localtime'),DownloadAttempts=DownloadAttempts+1 WHERE Id=${ID}"
 
     IS_CT=$(echo $URL | grep -c ceskatelevize.cz || true)
-    OPTS=""
-    if [ "$IS_CT" -gt 0 ]; then
-        OPTS="-f best"
-    fi
+    OPTS="-f bestvideo+bestaudio/best"
+#    if [ "$IS_CT" -gt 0 ]; then
+#        OPTS="-f best"
+#    fi
+
+	METADATAFILE=$(sqlite3 $SQLITE_DB "SELECT MetadataFileName FROM files WHERE Id=$ID"||true)
+	METADATAFILE="$DIR_NAME/$METADATAFILE"
+	if [ -f "$METADATAFILE" -a -s "$METADATAFILE" ]; then
+		OPTS="$OPTS --load-info-json $METADATAFILE"
+	fi
 
     COMMAND="/home/honza/bin/youtube-dl $YTD_OPTS $OPTS $URL"
+#    echo $COMMAND
+#    exit
     set +e
     eval $COMMAND
     RESULT=$?
