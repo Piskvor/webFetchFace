@@ -352,7 +352,15 @@ foreach ($result as $row) {
 	}
 	print '</td>';
 
-	print '<td class="rowDate">';
+	print '<td class="rowDate"';
+	if ($row['FileStatus'] == DownloadStatus::STATUS_FINISHED || $row['FileStatus'] == DownloadStatus::STATUS_DOWNLOADING || DownloadStatus::isError($row['FileStatus'])) {
+		$outfile = dirname($row['MetadataFileName']) . DIRECTORY_SEPARATOR
+			. $row['Id'] . '.out';
+		if (file_exists($outfile)) {
+			print ' data-outfilename="' . $outfile . '"';
+		}
+	}
+	print '>';
 
 	print dateTag(
 		$row['DownloadedAt']

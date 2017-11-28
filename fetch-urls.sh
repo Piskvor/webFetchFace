@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+export LANG=C
 set -euxo pipefail
 
 JMA_SP="q5tDF"
@@ -79,12 +80,22 @@ for i in $ROWS ; do
 		OPTS="$OPTS --load-info-json $METADATAFILE"
 	fi
 
+	URLDOMAIN=$(sqlite3 $SQLITE_DB "SELECT UrlDomain FROM files WHERE Id=$ID"||true)
+	TMP_URL_DIR="$DIR_NAME/$TMP_DIR"
+	if [ -d "$DIR_NAME/$TMP_DIR/$URLDOMAIN" ]; then
+		TMP_URL_DIR="$DIR_NAME/$TMP_DIR/$URLDOMAIN"
+	fi
+
     COMMAND="/home/honza/bin/youtube-dl $YTD_OPTS $OPTS $URL"
 #    echo $COMMAND
 #    exit
+	date >> "$TMP_URL_DIR/$ID.out"
+	chgrp www-data "$TMP_URL_DIR/$ID.out"
+	chmod 664 "$TMP_URL_DIR/$ID.out"
     set +e
-    eval $COMMAND
+    eval $COMMAND >> "$TMP_URL_DIR/$ID.out"
     RESULT=$?
+	date >> "$TMP_URL_DIR/$ID.out"
     set -e
     if [ $RESULT -eq 0 ]; then
 
@@ -122,7 +133,7 @@ for i in $ROWS ; do
 
 done
 
-if [ "$SOME_SUCCESS" = "0" ]; then
+if [ "$SOME_SUCCESS" -gt 0 ]; then
 	cd $DIR_NAME
 	$(
 	    if [ -d files/pohadky ]; then
