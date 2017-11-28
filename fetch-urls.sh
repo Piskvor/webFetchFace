@@ -15,6 +15,20 @@ cd $DIR_NAME;
 DIR_NAME=$(pwd)
 MY_PID=$$
 LOCKFILE=$DIR_NAME/$TMP_DIR/fetch-urls.lock
+LOGFILE=$DIR_NAME/$TMP_DIR/full.log
+
+WHAT=${1:-""}
+COUNTER=${2:-0}
+COUNTER=$(( $COUNTER + 1 ))
+echo $COUNTER
+if [ "$COUNTER" -gt 2 ]; then
+	echo "LOOP!"
+	exit 3
+fi
+if [ "$WHAT" != "--run-logged" -a "$COUNTER" = 1 ]; then
+	$0 --run-logged ${COUNTER} 2>&1 | tee -a $LOGFILE
+	exit $?
+fi
 
 exec 9>$LOCKFILE
 if ! flock -n 9  ; then
