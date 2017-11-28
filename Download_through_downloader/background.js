@@ -121,7 +121,7 @@ function xhr_call_inpage_result__iggwrurefj(event, notyf, requestedUrl, link, te
 
 var texts = {};
 
-if (typeof browser !== 'undefined' && browser) {
+if (typeof browser !== 'undefined' && browser && typeof browser.i18n !== 'undefined') {
 	texts = {
 		'messageRequestStarting': browser.i18n.getMessage("messageRequestStarting"),
 		'messageResponseSuccess': browser.i18n.getMessage("messageResponseSuccess"),
@@ -148,7 +148,7 @@ if (typeof browser !== 'undefined' && browser) {
 	);
 }
 
-if (typeof browser !== 'undefined' && browser) {
+if (typeof browser !== 'undefined' && browser && typeof browser.browserAction !== 'undefined') {
 
 	const downloaderLink = "https://dl.piskvor.org/downloader/";
 
