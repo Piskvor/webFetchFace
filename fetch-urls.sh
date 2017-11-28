@@ -25,7 +25,7 @@ echo "running $$"
 touch $LOCKFILE
 
 export SQLITE_DB=$DIR_NAME/downloads.sqlite
-YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin --skip-unavailable-fragments --add-metadata --limit-rate=2M --fixup=detect_or_warn --embed-thumbnail'
+YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin --skip-unavailable-fragments --add-metadata --limit-rate=3M --fixup=detect_or_warn'
 
 cp $DIR_NAME/downloads.list $DIR_NAME/downloads.tmp.list
 echo -n ''>$DIR_NAME/downloads.list
@@ -90,15 +90,16 @@ for i in $ROWS ; do
     COMMAND="/home/honza/bin/youtube-dl $YTD_OPTS $OPTS $URL"
 #    echo $COMMAND
 #    exit
+    set +e
 	date >> ${OUTFILE}
 	chgrp www-data ${OUTFILE}
 	chmod 664 ${OUTFILE}
-    set +e
     eval $COMMAND >> ${OUTFILE}
     RESULT=$?
+    echo $RESULT >> ${OUTFILE}
 	date >> ${OUTFILE}
     set -e
-    if [ $RESULT -eq 0 ]; then
+    if [ "$RESULT" -eq 0 ]; then
 
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime'),FilePath='${FILES_DIR}' WHERE Id=${ID}"
 		SOME_SUCCESS=1
