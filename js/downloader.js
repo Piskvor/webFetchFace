@@ -47,14 +47,14 @@ $(document).ready(function () {
 		delay: 2000
 	});
 	$('.timeago').timeago();
-	$('.rowStatus').on('dblclick', function (dblClickEvt) {
+	$('.rowStatus').on('dblclick touchend', function (dblClickEvt) {
 		var $rs = $(dblClickEvt.target);
 		var md = $rs.data('metadatafilename');
 		if (md) {
 			window.open(md);
 		}
 	});
-	$('.rowDate').on('dblclick', function (dblClickEvt) {
+	$('.rowDate').on('dblclick touchend', function (dblClickEvt) {
 		var $rs = $(dblClickEvt.currentTarget);
 		var md = $rs.data('outfilename');
 
