@@ -327,8 +327,13 @@ foreach ($result as $row) {
 	}
 	print "</td>\n";
 	print '<td class="rowTitle">';
+	if (!empty($row['Title'])) {
+		$title = $row['Title'];
+	} else {
+		$title = $row['Url'];
+	}
 	if (!DownloadStatus::isError($row['FileStatus'])) {
-		print '<a href="' . $row['Url'] . '">' . $row['Title'] . '</a>';
+		print '<a href="' . $row['Url'] . '">' . $title . '</a>';
 	} else {
 		if (!empty($row['Title'])) {
 			print $row['Title'] . '<br>';
