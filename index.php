@@ -16,6 +16,7 @@ $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
 $noImage = isset($_REQUEST['noImage']);
 $isScript = isset($_REQUEST['isScript']);
+$plaintext = isset($_REQUEST['plaintext']);
 
 try {
 
@@ -221,7 +222,6 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		}
 	}
 	if ($isScript) {
-		header("Content-Type: application/json");
 		$result = array(
 			'result' => 'OK'
 		);
@@ -232,7 +232,19 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		$result['skippedUrls'] = $urlSkipped;
 		$result['errors'] = count($urlErrors);
 		$result['errorsUrls'] = $urlErrors;
-		echo json_encode($result);
+		if ($plaintext) {
+            header('Content-Type: text/plain');
+            $resultText = null;
+            if ($result['skipped'] || $result['errors'] || !$result['added']) {
+                echo $result['added'] . ' added,' . $result['skipped'] . ' skipped,' . $result['errors'] . ' errors.';
+            } else {
+                echo 'OK: ' . $result['added'] . ' added.';
+            }
+            echo $resultText;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode($result);
+        }
 	} else {
 		header('Location: ?do=list');
 	}
