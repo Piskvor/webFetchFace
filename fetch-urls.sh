@@ -150,6 +150,11 @@ for i in $ROWS ; do
 
 done
 
+$(
+cd $DIR_NAME
+php set-new-name.php
+)
+
 if [ "$SOME_SUCCESS" -gt 0 ]; then
 	cd $DIR_NAME
 	$(
@@ -158,6 +163,5 @@ if [ "$SOME_SUCCESS" -gt 0 ]; then
 	        bash rpi/.scripts/create_dirs.sh
 	    fi
 	)
-	php set-new-name.php
 fi
 exit 0
