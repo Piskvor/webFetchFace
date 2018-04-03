@@ -66,6 +66,11 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 				}
 			}
 
+            $counter = 5;
+			// try decoding the URL, might arrive URLencoded.
+            while ($counter > 0 && preg_match('/^https?%/', $url)) {
+                $url = rawurldecode($url);
+            }
 			$urlStructure = @parse_url($url);
 			$dir = $tmpDir;
 			if ($urlStructure === false || !isset($urlStructure['scheme'])) {
@@ -381,9 +386,13 @@ foreach ($result as $row) {
 
 	print dateTag(
 		$row['DownloadedAt']
-			? $row['DownloadedAt'] : ($row['DownloadStartedAt']
-			? $row['DownloadStartedAt'] : $row['CreatedAt']), $sqlDate,
-		$isoDate, $humanDate
+			? $row['DownloadedAt']
+            : ($row['DownloadStartedAt']
+			    ? $row['DownloadStartedAt']
+                : $row['CreatedAt']),
+        $sqlDate,
+		$isoDate,
+        $humanDate
 	);
 
 	print '</td>';
