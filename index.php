@@ -50,7 +50,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		$now = date($sqlDate);
 
 		$prepNew = $db->prepare(
-			'INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus) VALUES (?,?,?,?)'
+			'INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus, IsPlaylist) VALUES (?,?,?,?,?)'
 		);
 		foreach (explode("\n", $_REQUEST['urls']) as $url) {
 			$url = trim($url);
@@ -73,6 +73,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
             }
 			$urlStructure = @parse_url($url);
 			$dir = $tmpDir;
+			$isPlaylist = 0;
 			if ($urlStructure === false || !isset($urlStructure['scheme'])) {
 				// URL is seriously borked, do not even try
 				$parsingResult = DownloadStatus::STATUS_INVALID;
@@ -92,7 +93,12 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 							$url, 'list='
 						)
 					) {
-						$url = preg_replace('/&?list=[a-zA-Z0-9-]+/', '', $url);
+					    if (strpos($url,'/playlist') !== false) {
+                            $isPlaylist = 1;
+                        } else {
+					        // remove reference to playlist
+                            $url = preg_replace('/&?list=[a-zA-Z0-9_-]+/', '', $url);
+                        }
 					}
 
 				} else {
@@ -112,7 +118,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 				continue;
 			}
 			$result = $prepNew->execute(
-				array($url, $host, $now, $parsingResult)
+				array($url, $host, $now, $parsingResult, $isPlaylist)
 			);
 
 
