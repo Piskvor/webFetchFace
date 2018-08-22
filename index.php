@@ -49,7 +49,7 @@ if (PHP_SAPI === 'cli') {
     $noImage = isset($_REQUEST['noImage']);
     $isScript = isset($_REQUEST['isScript']);
     $plaintext = isset($_REQUEST['plaintext']);
-    $doAction = $_REQUEST['do'];
+    $doAction = isset($_REQUEST['do']) ? $_REQUEST['do'] : null;
     $requestId = null;
     if (isset($_REQUEST['id'])) {
         $requestId = (int)$_REQUEST['id'];
@@ -75,7 +75,7 @@ $prepMetadataAttempts = $db->prepare(
 	'UPDATE files SET FileStatus=?, MetadataFileName=?, MetadataAttempts=MetadataAttempts+1 WHERE Id=?'
 );
 
-if (isset($doAction) && $doAction !== 'list') {
+if (!empty($doAction) && $doAction !== 'list') {
 	
 	$action = $doAction;
 	$titleAdded = array();
@@ -293,18 +293,14 @@ if (isset($doAction) && $doAction !== 'list') {
                 }
 			}
 		}
-	} else {
-		if ($action === 'delete' && $requestId) {
-			$prepStatus->execute(
-				array(DownloadStatus::STATUS_DISCARDED, $requestId)
-			);
-		} else {
-			if ($action === 'retry' && $requestId) {
-				$prepStatus->execute(
-					array(DownloadStatus::STATUS_QUEUED, $requestId)
-				);
-			}
-		}
+	} elseif ($action === 'delete' && $requestId) {
+        $prepStatus->execute(
+            array(DownloadStatus::STATUS_DISCARDED, $requestId)
+        );
+    } elseif ($action === 'retry' && $requestId) {
+        $prepStatus->execute(
+            array(DownloadStatus::STATUS_QUEUED, $requestId)
+        );
 	}
 	if ($isScript) {
 		$result = array(

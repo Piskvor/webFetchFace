@@ -79,9 +79,25 @@ for i in ${ROWS} ; do
     export ID=$(echo ${i} | sed 's/|.*//')
     METADATA_FILENAME=$(echo ${i} | sed 's/^[0-9]\+|//')
 
+	URLDOMAIN=$(sqlite3 $SQLITE_DB "SELECT UrlDomain FROM files WHERE Id=$ID"||true)
+	TMP_URL_DIR="$DIR_NAME/$TMP_DIR"
+	if [ -d "$DIR_NAME/$TMP_DIR/$URLDOMAIN" ]; then
+		TMP_URL_DIR="$DIR_NAME/$TMP_DIR/$URLDOMAIN"
+	fi
+	OUTFILE="$TMP_URL_DIR/$ID.out.txt"
+
     sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=4,DownloadStartedAt=DATETIME('now', 'localtime'),DownloadAttempts=DownloadAttempts+1 WHERE Id=${ID}"
-    RESULT=$(php ${DIR_NAME}/index.php add ${METADATA_FILENAME} | tee -a /dev/stderr | grep -cF ',0 errors')
-    if [ "$RESULT" = 1 ] ; then
+    set +e
+    COMMAND="/usr/bin/php ${DIR_NAME}/index.php add ${METADATA_FILENAME}"
+	touch ${OUTFILE} && chgrp www-data ${OUTFILE} && chmod 664 ${OUTFILE}
+	date >> ${OUTFILE}
+	echo $COMMAND >> ${OUTFILE}
+    RESULT=$(eval $COMMAND 2>> ${OUTFILE})
+    echo $RESULT >> ${OUTFILE}
+	date >> ${OUTFILE}
+	RESULT_COUNT=$(echo $RESULT |& grep -cF ',0 errors')
+    set -e
+    if [ "$RESULT_COUNT" -eq 1 ] ; then
         sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime') WHERE Id=${ID}"
     else
         sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=904,DownloaderPid=NULL WHERE Id=${ID}"
@@ -140,7 +156,7 @@ for i in $ROWS ; do
 
 	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
 	for sp in ${JMA_SP} ${MAJA_SP}; do
-	  pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
+	  /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
 	done
 
 	   continue

@@ -62,7 +62,7 @@ function getSanitizedName($displayId, $title, $fileName) {
 }
 
 function getJson($string) {
-    return json_decode($string,true,20);
+    return @json_decode($string,true,20);
 }
 
 function getJsonFile($fname) {
