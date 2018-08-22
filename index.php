@@ -17,6 +17,15 @@ $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 $noImage = isset($_REQUEST['noImage']);
 $isScript = isset($_REQUEST['isScript']);
 $plaintext = isset($_REQUEST['plaintext']);
+$doAction = $_REQUEST['do'];
+$requestId = null;
+if (isset($_REQUEST['id'])) {
+    $requestId = (int)$_REQUEST['id'];
+    if ($requestId <= 0) {
+        $requestId = null;
+    }
+}
+$requestUrls = isset($_REQUEST['urls']) ? $_REQUEST['urls'] : '';
 
 try {
 
@@ -33,15 +42,9 @@ $prepMetadataAttempts = $db->prepare(
 	'UPDATE files SET FileStatus=?, MetadataFileName=?, MetadataAttempts=MetadataAttempts+1 WHERE Id=?'
 );
 
-if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
-	$requestId = null;
-	if (isset($_REQUEST['id'])) {
-		$requestId = (int)$_REQUEST['id'];
-		if ($requestId <= 0) {
-			$requestId = null;
-		}
-	}
-	$action = $_REQUEST['do'];
+if (isset($doAction) && $doAction !== 'list') {
+	
+	$action = $doAction;
 	$titleAdded = array();
 	$urlAdded = array();
 	$urlSkipped = array();
@@ -52,7 +55,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		$prepNew = $db->prepare(
 			'INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus, IsPlaylist) VALUES (?,?,?,?,?)'
 		);
-		foreach (explode("\n", $_REQUEST['urls']) as $url) {
+		foreach (explode("\n", $requestUrls) as $url) {
 			$url = trim($url);
 			if (empty($url)) {
 				continue;
