@@ -14,18 +14,51 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
-$noImage = isset($_REQUEST['noImage']);
-$isScript = isset($_REQUEST['isScript']);
-$plaintext = isset($_REQUEST['plaintext']);
-$doAction = $_REQUEST['do'];
-$requestId = null;
-if (isset($_REQUEST['id'])) {
-    $requestId = (int)$_REQUEST['id'];
-    if ($requestId <= 0) {
-        $requestId = null;
+function xheader ($string, $replace = true, $http_response_code = null)
+{
+    if (PHP_SAPI !== 'cli') {
+        header($string,$replace, $http_response_code);
     }
 }
-$requestUrls = isset($_REQUEST['urls']) ? $_REQUEST['urls'] : '';
+
+if (PHP_SAPI === 'cli') {
+    if ($argc === 3 && $argv[1] === 'add') {
+        $noImage = false;
+        $isScript = true;
+        $plaintext = true;
+        $doAction = 'add';
+        $requestId = null;
+        $fileName = realpath(__DIR__ . '/' . $argv[2]);
+        $basePath = realpath(__DIR__);
+        $urls = array();
+        if (strpos($fileName,$basePath) === 0 && file_exists($fileName)) {
+            $rows = file($fileName);
+            foreach ($rows as $row) {
+                $data = getJson($row);
+                if ($data && $data['_type'] === 'url' && $data['ie_key'] === 'Youtube') {
+                    $urls[] = 'https://youtu.be/' . $data['url'];
+                }
+            }
+        }
+        $requestUrls = implode("\n", $urls);
+    } else {
+        echo 'Usage: ' . __FILE__ . ' add fname.json' . "\n";
+        exit;
+    }
+} else {
+    $noImage = isset($_REQUEST['noImage']);
+    $isScript = isset($_REQUEST['isScript']);
+    $plaintext = isset($_REQUEST['plaintext']);
+    $doAction = $_REQUEST['do'];
+    $requestId = null;
+    if (isset($_REQUEST['id'])) {
+        $requestId = (int)$_REQUEST['id'];
+        if ($requestId <= 0) {
+            $requestId = null;
+        }
+    }
+    $requestUrls = isset($_REQUEST['urls']) ? $_REQUEST['urls'] : '';
+}
 
 try {
 
@@ -285,7 +318,7 @@ if (isset($doAction) && $doAction !== 'list') {
 		$result['errors'] = count($urlErrors);
 		$result['errorsUrls'] = $urlErrors;
 		if ($plaintext) {
-            header('Content-Type: text/plain');
+            xheader('Content-Type: text/plain');
             $resultText = null;
             if ($result['skipped'] || $result['errors'] || !$result['added']) {
                 echo $result['added'] . ' added,' . $result['skipped'] . ' skipped,' . $result['errors'] . ' errors.';
@@ -294,13 +327,13 @@ if (isset($doAction) && $doAction !== 'list') {
             }
             echo $resultText;
         } else {
-            header('Content-Type: application/json');
+            xheader('Content-Type: application/json');
             echo json_encode($result);
         }
 	} else {
-		header('Location: ?do=list');
+		xheader('Location: ?do=list');
 	}
-	header('Expires: ' . gmdate('r'));
+	xheader('Expires: ' . gmdate('r'));
 	exit;
 }
 

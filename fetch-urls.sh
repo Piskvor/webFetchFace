@@ -3,7 +3,7 @@
 export LANG=C
 set -euxo pipefail
 
-JMA_SP="q5tDF"
+JMA_SP="3f3c8580de2c25a813d62439c58d6d3c"
 MAJA_SP=""
 BN="threepio download"
 FILES_DIR="files/"
@@ -70,6 +70,25 @@ cleanupDeadDownloads () {
 
 cleanupDeadDownloads
 
+ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,MetadataFileName FROM files WHERE DownloaderPid=${MY_PID} AND FileStatus=3 AND IsPlaylist=1 ORDER BY PriorityPercent DESC,Id ASC"||true)
+
+IFS=$'\n'
+SOME_SUCCESS=0
+for i in ${ROWS} ; do
+
+    export ID=$(echo ${i} | sed 's/|.*//')
+    METADATA_FILENAME=$(echo ${i} | sed 's/^[0-9]\+|//')
+
+    sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=4,DownloadStartedAt=DATETIME('now', 'localtime'),DownloadAttempts=DownloadAttempts+1 WHERE Id=${ID}"
+    RESULT=$(php ${DIR_NAME}/index.php add ${METADATA_FILENAME} | tee -a /dev/stderr | grep -cF ',0 errors')
+    if [ "$RESULT" = 1 ] ; then
+        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime') WHERE Id=${ID}"
+    else
+        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=904,DownloaderPid=NULL WHERE Id=${ID}"
+    fi
+
+done
+
 ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE DownloaderPid=${MY_PID} AND FileStatus=3 AND IsPlaylist=0 ORDER BY PriorityPercent DESC,Id ASC"||true)
 
 IFS=$'\n'
@@ -81,8 +100,8 @@ for i in $ROWS ; do
 #echo $URL;continue
     sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=4,DownloadStartedAt=DATETIME('now', 'localtime'),DownloadAttempts=DownloadAttempts+1 WHERE Id=${ID}"
 
-    IS_CT=$(echo $URL | grep -c ceskatelevize.cz || true)
     OPTS="-f bestvideo+bestaudio/best"
+#    IS_CT=$(echo $URL | grep -c ceskatelevize.cz || true)
 #    if [ "$IS_CT" -gt 0 ]; then
 #        OPTS="-f best"
 #    fi
@@ -120,8 +139,8 @@ for i in $ROWS ; do
 	   continue
 
 	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
-	for sp in $JMA_SP $MAJA_SP; do
-	 curl -q "https://api.simplepush.io/send/$sp/$BN/$MESSAGE"
+	for sp in ${JMA_SP} ${MAJA_SP}; do
+	  pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
 	done
 
 	   continue
