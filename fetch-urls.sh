@@ -152,12 +152,11 @@ for i in $ROWS ; do
 
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime'),FilePath='${FILES_DIR}' WHERE Id=${ID}"
 		SOME_SUCCESS=1
-	   continue
 
-	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
-	for sp in ${JMA_SP} ${MAJA_SP}; do
-	  /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
-	done
+        MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}")
+        for sp in ${JMA_SP} ${MAJA_SP}; do
+          /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
+        done
 
 	   continue
 
