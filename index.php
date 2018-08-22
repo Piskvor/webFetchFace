@@ -139,84 +139,122 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 					)
 				);
 				$ytdResult = -1;
-				exec(
-					$ytd . ' --dump-json' . " '" . $url . "' > "
-					. $jsonFilename, $output, $ytdResult
-				);
-				chmod($jsonFilename, 0777);
-				@chgrp($jsonFilename, 'honza');
-				if (file_exists($jsonFilename)) {
-					$jsonData = getJsonFile($jsonFilename);
-					$thumbFileName = null;
-					if (count($jsonData) > 0) {
-						$now = date($sqlDate);
-						if (!empty($jsonData['thumbnail'])) {
-							$thumbFileName = getThumbName($id, $jsonData['id'], $jsonData['thumbnail']);
-							$thumbPath = $relDir . DIRECTORY_SEPARATOR . $host;
-							$thumbFilePath = $thumbPath . DIRECTORY_SEPARATOR
-								. $thumbFileName;
-						}
-						$prepStatusJson = $db->prepare(
-							'UPDATE files SET FileStatus=?, FileName=?, DisplayId=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
-						);
-						$prepStatusJson->execute(
-							array(
-								DownloadStatus::STATUS_QUEUED,
-								$jsonData['_filename'], 
-								getDisplayId($jsonData),
-								$jsonData['title'],
-								$jsonData['duration'], $jsonData['extractor'],
-								$thumbFilePath, $jsonData['id'], $now, $now, $id
-							)
-						);
 
-						$urlAdded[] = $url;
-						$titleAdded[] = $jsonData['title'];
-						$thumbnailUrl = !empty($jsonData['thumbnail']) ? $jsonData['thumbnail'] : null;
-						if (!$thumbnailUrl) {
-							if (isset($jsonData['thumbnails']) && is_array($jsonData['thumbnails'])) {
-								foreach ($jsonData['thumbnails'] as $thumbnail) {
-									if (!empty($thumbnail['url'])) {
-										$thumbnailUrl = $thumbnail['url'];
-										break;
-									}
-								}
-							}
-						}
+				if ($isPlaylist) {
+                    exec(
+                        $ytd.' --yes-playlist --ignore-errors --flat-playlist --dump-json'." '".$url."' > "
+                        .$jsonFilename,
+                        $output,
+                        $ytdResult
+                    );
+                    @chmod($jsonFilename, 0777);
+                    @chgrp($jsonFilename, 'honza');
+                    if (file_exists($jsonFilename) && filesize($jsonFilename) > 0) {
+                        $prepStatus->execute(
+                            array(DownloadStatus::STATUS_QUEUED, $id)
+                        );
+                        $urlErrors[] = $url;
+                    } else {
+                        $prepStatus->execute(
+                            array(DownloadStatus::STATUS_METADATA_ERROR, $id)
+                        );
+                        $urlErrors[] = $url;
+                    }
+                } else {
+				    // single file
+                    exec(
+                        $ytd.' --dump-json'." '".$url."' > "
+                        .$jsonFilename,
+                        $output,
+                        $ytdResult
+                    );
+                    @chmod($jsonFilename, 0777);
+                    @chgrp($jsonFilename, 'honza');
 
-						if (!empty($jsonData['thumbnail'])
-							&& !file_exists(
-								$thumbFilePath
-							)
-						) {
-							$DLFile = $thumbFilePath;
-							$DLURL = $thumbnailUrl;
-							$fp = fopen($DLFile, 'wb+');
-							$ch = curl_init($DLURL);
-							curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-							curl_setopt($ch, CURLOPT_FILE, $fp);
-							curl_exec($ch);
-							curl_close($ch);
-							fclose($fp);
-							chmod($DLFile, 0664);
+                    if (file_exists($jsonFilename)) {
+                        $jsonData = getJsonFile($jsonFilename);
+                        $thumbFileName = null;
+                        if (count($jsonData) > 0) {
+                            $now = date($sqlDate);
+                            if (!empty($jsonData['thumbnail'])) {
+                                $thumbFileName = getThumbName($id, $jsonData['id'], $jsonData['thumbnail']);
+                                $thumbPath = $relDir.DIRECTORY_SEPARATOR.$host;
+                                $thumbFilePath = $thumbPath.DIRECTORY_SEPARATOR
+                                    .$thumbFileName;
+                            }
+                            $prepStatusJson = $db->prepare(
+                                'UPDATE files SET FileStatus=?, FileName=?, DisplayId=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
+                            );
+                            $prepStatusJson->execute(
+                                array(
+                                    DownloadStatus::STATUS_QUEUED,
+                                    $jsonData['_filename'],
+                                    getDisplayId($jsonData),
+                                    $jsonData['title'],
+                                    $jsonData['duration'],
+                                    $jsonData['extractor'],
+                                    $thumbFilePath,
+                                    $jsonData['id'],
+                                    $now,
+                                    $now,
+                                    $id
+                                )
+                            );
 
-							updateTinyThumbnail($db, $id,
-							$thumbFileName, $thumbnailWidth,
-								$thumbnailWidth, $thumbPath, $thumbPath, '_tiny'
-							);
-						}
-					} else {
-						$prepStatus->execute(
-							array(DownloadStatus::STATUS_METADATA_ERROR, $id)
-						);
-						$urlErrors[] = $url;
-					}
-				} else {
-					$prepStatus->execute(
-						array(DownloadStatus::STATUS_METADATA_ERROR, $id)
-					);
-					$urlErrors[] = $url;
-				}
+                            $urlAdded[] = $url;
+                            $titleAdded[] = $jsonData['title'];
+                            $thumbnailUrl = !empty($jsonData['thumbnail']) ? $jsonData['thumbnail'] : null;
+                            if (!$thumbnailUrl) {
+                                if (isset($jsonData['thumbnails']) && is_array($jsonData['thumbnails'])) {
+                                    foreach ($jsonData['thumbnails'] as $thumbnail) {
+                                        if (!empty($thumbnail['url'])) {
+                                            $thumbnailUrl = $thumbnail['url'];
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!empty($jsonData['thumbnail'])
+                                && !file_exists(
+                                    $thumbFilePath
+                                )
+                            ) {
+                                $DLFile = $thumbFilePath;
+                                $DLURL = $thumbnailUrl;
+                                $fp = fopen($DLFile, 'wb+');
+                                $ch = curl_init($DLURL);
+                                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                                curl_setopt($ch, CURLOPT_FILE, $fp);
+                                curl_exec($ch);
+                                curl_close($ch);
+                                fclose($fp);
+                                chmod($DLFile, 0664);
+
+                                updateTinyThumbnail(
+                                    $db,
+                                    $id,
+                                    $thumbFileName,
+                                    $thumbnailWidth,
+                                    $thumbnailWidth,
+                                    $thumbPath,
+                                    $thumbPath,
+                                    '_tiny'
+                                );
+                            }
+                        } else {
+                            $prepStatus->execute(
+                                array(DownloadStatus::STATUS_METADATA_ERROR, $id)
+                            );
+                            $urlErrors[] = $url;
+                        }
+                    } else {
+                        $prepStatus->execute(
+                            array(DownloadStatus::STATUS_METADATA_ERROR, $id)
+                        );
+                        $urlErrors[] = $url;
+                    }
+                }
 			}
 		}
 	} else {
@@ -346,7 +384,11 @@ foreach ($result as $row) {
 		}
 		print $image . '" class="' . implode(' ', $class) . '"/></a>';
 	} else {
-		print '<div class="preview-image no-image">I</div>';
+	    if ($row['IsPlaylist']) {
+            print '<div class="preview-image no-image playlist-image">M</div>';
+        } else {
+            print '<div class="preview-image no-image">I</div>';
+        }
 	}
 	print "</td>\n";
 	print '<td class="rowTitle">';

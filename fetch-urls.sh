@@ -45,8 +45,8 @@ cp $DIR_NAME/downloads.list $DIR_NAME/downloads.tmp.list
 echo -n ''>$DIR_NAME/downloads.list
 
 cd $DIR_NAME
+# lock the queued files to our pid
 sqlite3 $SQLITE_DB "UPDATE files SET DownloaderPid=${MY_PID},FileStatus=3 WHERE FileStatus=2 OR (FileStatus=3 and DownloaderPid IS NULL)"
- #AND DownloaderPid IS NULL"
 
 cd $DIR_NAME/$FILES_DIR
 
@@ -70,8 +70,7 @@ cleanupDeadDownloads () {
 
 cleanupDeadDownloads
 
-ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE DownloaderPid=${MY_PID} AND FileStatus=3 ORDER BY PriorityPercent DESC,Id ASC"||true)
-#ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE FileStatus=3 ORDER BY PriorityPercent DESC,Id ASC"||true)
+ROWS=$(sqlite3 $SQLITE_DB "SELECT Id,Url FROM files WHERE DownloaderPid=${MY_PID} AND FileStatus=3 AND IsPlaylist=0 ORDER BY PriorityPercent DESC,Id ASC"||true)
 
 IFS=$'\n'
 SOME_SUCCESS=0
