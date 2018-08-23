@@ -67,6 +67,9 @@ $db = new DbConnection($filesDb);
 $prepFindUrl = $db->prepare(
 	'SELECT Id,FileStatus FROM files WHERE Url=? AND FileStatus <= 100'
 );
+$prepFindRunning = $db->prepare(
+	'SELECT COUNT(Id) AS running FROM files WHERE FileStatus <= 4'
+);
 $prepStatus = $db->prepare('UPDATE files SET FileStatus=? WHERE Id=?');
 $prepAttempts = $db->prepare(
 	'UPDATE files SET DownloadAttempts=DownloadAttempts+1 WHERE Id=?'
@@ -306,20 +309,28 @@ if (!empty($doAction) && $doAction !== 'list') {
 		$result = array(
 			'result' => 'OK'
 		);
-		$result['added'] = count($titleAdded);
+
+        $runningCount = 0;
+        $prepFindRunning->bindColumn('running', $runningCount);
+        $prepFindRunning->execute();
+        $prepFindRunning->fetch();
+
+        $result['added'] = count($titleAdded);
 		$result['addedTitles'] = $titleAdded;
 		$result['addedUrls'] = $urlAdded;
 		$result['skipped'] = count($urlSkipped);
 		$result['skippedUrls'] = $urlSkipped;
 		$result['errors'] = count($urlErrors);
 		$result['errorsUrls'] = $urlErrors;
+		$result['pending'] = $runningCount;
+
 		if ($plaintext) {
             xheader('Content-Type: text/plain');
             $resultText = null;
             if ($result['skipped'] || $result['errors'] || !$result['added']) {
-                echo $result['added'] . ' added,' . $result['skipped'] . ' skipped,' . $result['errors'] . ' errors.';
+                echo $result['added'] . ' added,' . $result['skipped'] . ' skipped,' . $result['errors'] . ' errors,' . $runningCount . ' pending.';
             } else {
-                echo 'OK: ' . $result['added'] . ' added.';
+                echo 'OK: ' . $result['added'] . ' added. ' . $runningCount . ' pending.';
             }
             echo $resultText;
         } else {
