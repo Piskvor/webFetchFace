@@ -28,15 +28,24 @@ if (PHP_SAPI === 'cli') {
         $plaintext = true;
         $doAction = 'add';
         $requestId = null;
-        $fileName = realpath(__DIR__ . '/' . $argv[2]);
-        $basePath = realpath(__DIR__);
+
         $urls = array();
-        if (strpos($fileName,$basePath) === 0 && file_exists($fileName)) {
-            $rows = file($fileName);
-            foreach ($rows as $row) {
-                $data = getJson($row);
-                if ($data && $data['_type'] === 'url' && $data['ie_key'] === 'Youtube') {
-                    $urls[] = 'https://youtu.be/' . $data['url'];
+        if (preg_match('~^https?://~', $argv[2])) {
+            $urlStructure = @parse_url($argv[2]);
+            $scheme = $urlStructure && isset($urlStructure['scheme']) ? strtolower($urlStructure['scheme']) : '';
+            if ($scheme === 'http' || $scheme === 'https') {
+                $urls[] = $argv[2];
+            }
+        } else {
+            $fileName = realpath(__DIR__.'/'.$argv[2]);
+            $basePath = realpath(__DIR__);
+            if (strpos($fileName, $basePath) === 0 && file_exists($fileName)) {
+                $rows = file($fileName);
+                foreach ($rows as $row) {
+                    $data = getJson($row);
+                    if ($data && $data['_type'] === 'url' && $data['ie_key'] === 'Youtube') {
+                        $urls[] = 'https://youtu.be/'.$data['url'];
+                    }
                 }
             }
         }
@@ -393,6 +402,7 @@ $result = $db->query(
 	. DownloadStatus::STATUS_DOWNLOADING . ' DESC, FileStatus = '
 	. DownloadStatus::STATUS_FINISHED
 	. ' ASC,PriorityPercent DESC,CreatedAt DESC,DownloadedAt DESC'
+    . ' LIMIT 200'
 );
 
 $changedFiles = 0;
