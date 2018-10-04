@@ -13,6 +13,11 @@ trap "exit 1" INT
 export DIR_NAME=$(dirname $0)
 cd ${DIR_NAME};
 DIR_NAME=$(pwd)
+
+if [ -f "$DIR_NAME/set_proxy.sh" ]; then
+    source "$DIR_NAME/set_proxy.sh"
+fi
+
 MY_PID=$$
 LOCKFILE="$DIR_NAME/$TMP_DIR/fetch-urls.lock"
 LOGFILE="$DIR_NAME/$TMP_DIR/full.log"
@@ -153,10 +158,10 @@ for i in $ROWS ; do
        sqlite3 $SQLITE_DB "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime'),FilePath='${FILES_DIR}' WHERE Id=${ID}"
 		SOME_SUCCESS=1
 
-        MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}")
-        for sp in ${JMA_SP} ${MAJA_SP}; do
-          /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
-        done
+	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
+	for sp in ${JMA_SP} ${MAJA_SP}; do
+	  /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
+	done
 
 	   continue
 
@@ -183,6 +188,7 @@ for i in $ROWS ; do
 
 done
 
+set +eu
 $(
 cd $DIR_NAME
 php set-new-name.php
