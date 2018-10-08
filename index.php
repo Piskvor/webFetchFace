@@ -14,9 +14,60 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 $tmpDir = __DIR__ . DIRECTORY_SEPARATOR . $relDir;
 
-$noImage = isset($_REQUEST['noImage']);
-$isScript = isset($_REQUEST['isScript']);
-$plaintext = isset($_REQUEST['plaintext']);
+function xheader ($string, $replace = true, $http_response_code = null)
+{
+    if (PHP_SAPI !== 'cli') {
+        header($string,$replace, $http_response_code);
+    }
+}
+
+if (PHP_SAPI === 'cli') {
+    if ($argc === 3 && $argv[1] === 'add') {
+        $noImage = false;
+        $isScript = true;
+        $plaintext = true;
+        $doAction = 'add';
+        $requestId = null;
+
+        $urls = array();
+        if (preg_match('~^https?://~', $argv[2])) {
+            $urlStructure = @parse_url($argv[2]);
+            $scheme = $urlStructure && isset($urlStructure['scheme']) ? strtolower($urlStructure['scheme']) : '';
+            if ($scheme === 'http' || $scheme === 'https') {
+                $urls[] = $argv[2];
+            }
+        } else {
+            $fileName = realpath(__DIR__.'/'.$argv[2]);
+            $basePath = realpath(__DIR__);
+            if (strpos($fileName, $basePath) === 0 && file_exists($fileName)) {
+                $rows = file($fileName);
+                foreach ($rows as $row) {
+                    $data = getJson($row);
+                    if ($data && $data['_type'] === 'url' && $data['ie_key'] === 'Youtube') {
+                        $urls[] = 'https://youtu.be/'.$data['url'];
+                    }
+                }
+            }
+        }
+        $requestUrls = implode("\n", $urls);
+    } else {
+        echo 'Usage: ' . __FILE__ . ' add fname.json' . "\n";
+        exit;
+    }
+} else {
+    $noImage = isset($_REQUEST['noImage']);
+    $isScript = isset($_REQUEST['isScript']);
+    $plaintext = isset($_REQUEST['plaintext']);
+    $doAction = isset($_REQUEST['do']) ? $_REQUEST['do'] : null;
+    $requestId = null;
+    if (isset($_REQUEST['id'])) {
+        $requestId = (int)$_REQUEST['id'];
+        if ($requestId <= 0) {
+            $requestId = null;
+        }
+    }
+    $requestUrls = isset($_REQUEST['urls']) ? $_REQUEST['urls'] : '';
+}
 
 try {
 
@@ -24,6 +75,9 @@ $db = new DbConnection($filesDb);
 
 $prepFindUrl = $db->prepare(
 	'SELECT Id,FileStatus FROM files WHERE Url=? AND FileStatus <= 100'
+);
+$prepFindRunning = $db->prepare(
+	'SELECT COUNT(Id) AS running FROM files WHERE FileStatus <= 4'
 );
 $prepStatus = $db->prepare('UPDATE files SET FileStatus=? WHERE Id=?');
 $prepAttempts = $db->prepare(
@@ -33,15 +87,9 @@ $prepMetadataAttempts = $db->prepare(
 	'UPDATE files SET FileStatus=?, MetadataFileName=?, MetadataAttempts=MetadataAttempts+1 WHERE Id=?'
 );
 
-if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
-	$requestId = null;
-	if (isset($_REQUEST['id'])) {
-		$requestId = (int)$_REQUEST['id'];
-		if ($requestId <= 0) {
-			$requestId = null;
-		}
-	}
-	$action = $_REQUEST['do'];
+if (!empty($doAction) && $doAction !== 'list') {
+	
+	$action = $doAction;
 	$titleAdded = array();
 	$urlAdded = array();
 	$urlSkipped = array();
@@ -50,9 +98,9 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 		$now = date($sqlDate);
 
 		$prepNew = $db->prepare(
-			'INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus) VALUES (?,?,?,?)'
+			'INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus, IsPlaylist) VALUES (?,?,?,?,?)'
 		);
-		foreach (explode("\n", $_REQUEST['urls']) as $url) {
+		foreach (explode("\n", $requestUrls) as $url) {
 			$url = trim($url);
 			if (empty($url)) {
 				continue;
@@ -73,6 +121,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
             }
 			$urlStructure = @parse_url($url);
 			$dir = $tmpDir;
+			$isPlaylist = 0;
 			if ($urlStructure === false || !isset($urlStructure['scheme'])) {
 				// URL is seriously borked, do not even try
 				$parsingResult = DownloadStatus::STATUS_INVALID;
@@ -92,7 +141,12 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 							$url, 'list='
 						)
 					) {
-						$url = preg_replace('/&?list=[a-zA-Z0-9-]+/', '', $url);
+					    if (strpos($url,'/playlist') !== false) {
+                            $isPlaylist = 1;
+                        } else {
+					        // remove reference to playlist
+                            $url = preg_replace('/&?list=[a-zA-Z0-9_-]+/', '', $url);
+                        }
 					}
 
 				} else {
@@ -112,7 +166,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 				continue;
 			}
 			$result = $prepNew->execute(
-				array($url, $host, $now, $parsingResult)
+				array($url, $host, $now, $parsingResult, $isPlaylist)
 			);
 
 
@@ -123,6 +177,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 				continue;
 			}
 			$jsonFilename = $dir . DIRECTORY_SEPARATOR . $id . '.json';
+			$jsonFilenameLog = $dir . DIRECTORY_SEPARATOR . $id . '.json.log';
 			if ($parsingResult === DownloadStatus::STATUS_NEW) {
 
 				$prepMetadataAttempts->execute(
@@ -133,127 +188,175 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] !== 'list') {
 					)
 				);
 				$ytdResult = -1;
-				exec(
-					$ytd . ' --dump-json' . " '" . $url . "' > "
-					. $jsonFilename, $output, $ytdResult
-				);
-				chmod($jsonFilename, 0777);
-				@chgrp($jsonFilename, 'honza');
-				if (file_exists($jsonFilename)) {
-					$jsonData = getJsonFile($jsonFilename);
-					$thumbFileName = null;
-					if (count($jsonData) > 0) {
-						$now = date($sqlDate);
-						if (!empty($jsonData['thumbnail'])) {
-							$thumbFileName = getThumbName($id, $jsonData['id'], $jsonData['thumbnail']);
-							$thumbPath = $relDir . DIRECTORY_SEPARATOR . $host;
-							$thumbFilePath = $thumbPath . DIRECTORY_SEPARATOR
-								. $thumbFileName;
-						}
-						$prepStatusJson = $db->prepare(
-							'UPDATE files SET FileStatus=?, FileName=?, DisplayId=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
-						);
-						$prepStatusJson->execute(
-							array(
-								DownloadStatus::STATUS_QUEUED,
-								$jsonData['_filename'], 
-								getDisplayId($jsonData),
-								$jsonData['title'],
-								$jsonData['duration'], $jsonData['extractor'],
-								$thumbFilePath, $jsonData['id'], $now, $now, $id
-							)
-						);
 
-						$urlAdded[] = $url;
-						$titleAdded[] = $jsonData['title'];
-						$thumbnailUrl = !empty($jsonData['thumbnail']) ? $jsonData['thumbnail'] : null;
-						if (!$thumbnailUrl) {
-							if (isset($jsonData['thumbnails']) && is_array($jsonData['thumbnails'])) {
-								foreach ($jsonData['thumbnails'] as $thumbnail) {
-									if (!empty($thumbnail['url'])) {
-										$thumbnailUrl = $thumbnail['url'];
-										break;
-									}
-								}
-							}
-						}
+				if ($isPlaylist) {
+                    $command = $ytd.' --yes-playlist --ignore-errors --flat-playlist --dump-json'." '".$url."' > "
+                    .$jsonFilename . ' 2>> ' . $jsonFilenameLog;
+                    @exec(
+                        $command,
+                        $output,
+                        $ytdResult
+                    );
+                    @chmod($jsonFilename, 0766);
+                    @chgrp($jsonFilename, 'honza');
+                    if (file_exists($jsonFilename) && filesize($jsonFilename) > 0) {
+                        $prepStatus->execute(
+                            array(DownloadStatus::STATUS_QUEUED, $id)
+                        );
+                        $urlErrors[] = $url;
+                    } else {
+                        $prepStatus->execute(
+                            array(DownloadStatus::STATUS_METADATA_ERROR, $id)
+                        );
+                        $urlErrors[] = $url;
+                    }
+                } else {
+				    // single file
+                    $command = $ytd.' --dump-json'." '".$url."' > "
+                        .$jsonFilename . ' 2>> ' . $jsonFilenameLog;
+                    @exec(
+                        $command,
+                        $output,
+                        $ytdResult
+                    );
+                    @chmod($jsonFilename, 0766);
+                    @chgrp($jsonFilename, 'honza');
 
-						if (!empty($jsonData['thumbnail'])
-							&& !file_exists(
-								$thumbFilePath
-							)
-						) {
-							$DLFile = $thumbFilePath;
-							$DLURL = $thumbnailUrl;
-							$fp = fopen($DLFile, 'wb+');
-							$ch = curl_init($DLURL);
-							curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-							curl_setopt($ch, CURLOPT_FILE, $fp);
-							curl_exec($ch);
-							curl_close($ch);
-							fclose($fp);
-							chmod($DLFile, 0664);
+                    if (file_exists($jsonFilename)) {
+                        $jsonData = getJsonFile($jsonFilename);
+                        $thumbFileName = null;
+                        if (count($jsonData) > 0) {
+                            $now = date($sqlDate);
+                            if (!empty($jsonData['thumbnail'])) {
+                                $thumbFileName = getThumbName($id, $jsonData['id'], $jsonData['thumbnail']);
+                                $thumbPath = $relDir.DIRECTORY_SEPARATOR.$host;
+                                $thumbFilePath = $thumbPath.DIRECTORY_SEPARATOR
+                                    .$thumbFileName;
+                            }
+                            $prepStatusJson = $db->prepare(
+                                'UPDATE files SET FileStatus=?, FileName=?, DisplayId=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
+                            );
+                            $prepStatusJson->execute(
+                                array(
+                                    DownloadStatus::STATUS_QUEUED,
+                                    $jsonData['_filename'],
+                                    getDisplayId($jsonData),
+                                    $jsonData['title'],
+                                    $jsonData['duration'],
+                                    $jsonData['extractor'],
+                                    $thumbFilePath,
+                                    $jsonData['id'],
+                                    $now,
+                                    $now,
+                                    $id
+                                )
+                            );
 
-							updateTinyThumbnail($db, $id,
-							$thumbFileName, $thumbnailWidth,
-								$thumbnailWidth, $thumbPath, $thumbPath, '_tiny'
-							);
-						}
-					} else {
-						$prepStatus->execute(
-							array(DownloadStatus::STATUS_METADATA_ERROR, $id)
-						);
-						$urlErrors[] = $url;
-					}
-				} else {
-					$prepStatus->execute(
-						array(DownloadStatus::STATUS_METADATA_ERROR, $id)
-					);
-					$urlErrors[] = $url;
-				}
+                            $urlAdded[] = $url;
+                            $titleAdded[] = $jsonData['title'];
+                            $thumbnailUrl = !empty($jsonData['thumbnail']) ? $jsonData['thumbnail'] : null;
+                            if (!$thumbnailUrl) {
+                                if (isset($jsonData['thumbnails']) && is_array($jsonData['thumbnails'])) {
+                                    foreach ($jsonData['thumbnails'] as $thumbnail) {
+                                        if (!empty($thumbnail['url'])) {
+                                            $thumbnailUrl = $thumbnail['url'];
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!empty($jsonData['thumbnail'])
+                                && !file_exists(
+                                    $thumbFilePath
+                                )
+                            ) {
+                                $DLFile = $thumbFilePath;
+                                $DLURL = $thumbnailUrl;
+                                $fp = fopen($DLFile, 'wb+');
+                                $ch = curl_init($DLURL);
+                                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                                curl_setopt($ch, CURLOPT_FILE, $fp);
+                                curl_exec($ch);
+                                curl_close($ch);
+                                fclose($fp);
+                                chmod($DLFile, 0664);
+
+                                updateTinyThumbnail(
+                                    $db,
+                                    $id,
+                                    $thumbFileName,
+                                    $thumbnailWidth,
+                                    $thumbnailWidth,
+                                    $thumbPath,
+                                    $thumbPath,
+                                    '_tiny'
+                                );
+                            }
+                        } else {
+                            $prepStatus->execute(
+                                array(DownloadStatus::STATUS_METADATA_ERROR, $id)
+                            );
+                            $urlErrors[] = $url;
+                        }
+                    } else {
+                        $prepStatus->execute(
+                            array(DownloadStatus::STATUS_METADATA_ERROR, $id)
+                        );
+                        $urlErrors[] = $url;
+                    }
+                }
+                file_put_contents($jsonFilenameLog, $command . "\n", FILE_APPEND);
+                file_put_contents($jsonFilenameLog, $output, FILE_APPEND);
+                @chmod($jsonFilenameLog, 0664);
+                @chgrp($jsonFilenameLog, 'honza');
 			}
 		}
-	} else {
-		if ($action === 'delete' && $requestId) {
-			$prepStatus->execute(
-				array(DownloadStatus::STATUS_DISCARDED, $requestId)
-			);
-		} else {
-			if ($action === 'retry' && $requestId) {
-				$prepStatus->execute(
-					array(DownloadStatus::STATUS_QUEUED, $requestId)
-				);
-			}
-		}
+	} elseif ($action === 'delete' && $requestId) {
+        $prepStatus->execute(
+            array(DownloadStatus::STATUS_DISCARDED, $requestId)
+        );
+    } elseif ($action === 'retry' && $requestId) {
+        $prepStatus->execute(
+            array(DownloadStatus::STATUS_QUEUED, $requestId)
+        );
 	}
 	if ($isScript) {
 		$result = array(
 			'result' => 'OK'
 		);
-		$result['added'] = count($titleAdded);
+
+        $runningCount = 0;
+        $prepFindRunning->bindColumn('running', $runningCount);
+        $prepFindRunning->execute();
+        $prepFindRunning->fetch();
+
+        $result['added'] = count($titleAdded);
 		$result['addedTitles'] = $titleAdded;
 		$result['addedUrls'] = $urlAdded;
 		$result['skipped'] = count($urlSkipped);
 		$result['skippedUrls'] = $urlSkipped;
 		$result['errors'] = count($urlErrors);
 		$result['errorsUrls'] = $urlErrors;
+		$result['pending'] = $runningCount;
+
 		if ($plaintext) {
-            header('Content-Type: text/plain');
+            xheader('Content-Type: text/plain');
             $resultText = null;
             if ($result['skipped'] || $result['errors'] || !$result['added']) {
-                echo $result['added'] . ' added,' . $result['skipped'] . ' skipped,' . $result['errors'] . ' errors.';
+                echo $result['added'] . ' added,' . $result['skipped'] . ' skipped,' . $result['errors'] . ' errors,' . $runningCount . ' pending.';
             } else {
-                echo 'OK: ' . $result['added'] . ' added.';
+                echo 'OK: ' . $result['added'] . ' added. ' . $runningCount . ' pending.';
             }
             echo $resultText;
         } else {
-            header('Content-Type: application/json');
+            xheader('Content-Type: application/json');
             echo json_encode($result);
         }
 	} else {
-		header('Location: ?do=list');
+		xheader('Location: ?do=list');
 	}
-	header('Expires: ' . gmdate('r'));
+	xheader('Expires: ' . gmdate('r'));
 	exit;
 }
 
@@ -306,6 +409,7 @@ $result = $db->query(
 	. DownloadStatus::STATUS_DOWNLOADING . ' DESC, FileStatus = '
 	. DownloadStatus::STATUS_FINISHED
 	. ' ASC,PriorityPercent DESC,CreatedAt DESC,DownloadedAt DESC'
+    . ' LIMIT 200'
 );
 
 $changedFiles = 0;
@@ -340,7 +444,11 @@ foreach ($result as $row) {
 		}
 		print $image . '" class="' . implode(' ', $class) . '"/></a>';
 	} else {
-		print '<div class="preview-image no-image">I</div>';
+	    if ($row['IsPlaylist']) {
+            print '<div class="preview-image no-image playlist-image">M</div>';
+        } else {
+            print '<div class="preview-image no-image">I</div>';
+        }
 	}
 	print "</td>\n";
 	print '<td class="rowTitle">';

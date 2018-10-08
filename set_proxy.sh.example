@@ -1,0 +1,7 @@
+#!/bin/sh
+
+export HTTP_PROXY=http://${1:-t}:${2:-3128}/
+export HTTPS_PROXY=${HTTP_PROXY}
+export http_proxy=${HTTP_PROXY}
+export https_proxy=${HTTP_PROXY}
+
