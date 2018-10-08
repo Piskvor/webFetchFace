@@ -49,6 +49,10 @@ touch $LOCKFILE
 export SQLITE_DB="$DIR_NAME/downloads.sqlite"
 YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin --skip-unavailable-fragments --add-metadata --limit-rate=3M --fixup=detect_or_warn'
 
+if [ "$http_proxy" != "" ]; then
+    YTD_OPTS="$YTD_OPTS --proxy=$http_proxy"
+fi
+
 cp $DIR_NAME/downloads.list $DIR_NAME/downloads.tmp.list
 echo -n ''>$DIR_NAME/downloads.list
 
