@@ -93,13 +93,15 @@ function share_native_inpage(clickEvent) {
 		url = $link.prop('href');
 		$link.addClass('dl-processing')
 		url += '&isScript=1';
-		getNotyf().info(texts.messageRequestStarting + ' ' + $link.data('video-url'));
+		var notyf = getNotyf();
+		notyf.info(texts.messageRequestStarting + ' ' + $link.data('video-url'));
 		xhr_call_inpage__iggwrurefj(
 			url,
 			function (xhrEvent) {
+				// console.log(xhrEvent);
 				xhr_call_inpage_result__iggwrurefj(
 					xhrEvent,
-					getNotyf(),
+                    notyf,
 					url,
 					window.location.href,
 					texts,

@@ -83,6 +83,30 @@ function xhr_call_inpage__iggwrurefj(url, loadend) {
 	xhr.send();
 }
 
+if (0) {
+    // response structure for IDE
+    response = {
+        'added': 2,
+        'addedTitles': [
+            'xyzzy',
+            'asdas'
+        ],
+        'addedUrls': [
+            'http://example.com/foo',
+            'http://example.com/bar'
+        ],
+        'skipped': 1,
+        'skippedUrls': [
+            'http://example.com/baz'
+        ],
+        'errors': 1,
+        'errorsUrls': [
+            'http://example.com/xyz'
+        ],
+        'pending': 3
+    }
+}
+
 function xhr_call_inpage_result__iggwrurefj(event, notyf, requestedUrl, link, texts, isBlank, finalCallback) {
 	var linkify = function (text) {
 		return '<a href="' + link + '"' + (isBlank ? ' target="_blank"' : '') + '>' + text + '</a>';
@@ -94,6 +118,7 @@ function xhr_call_inpage_result__iggwrurefj(event, notyf, requestedUrl, link, te
 		var response = null;
 		try {
 			response = JSON.parse(event.target.responseText);
+			// console.log(response);
 			if (response.added > 0) {
 				for (var c = 0; c < response.addedTitles.length; c++) {
 					notyf.confirm(linkify(texts['messageResponseSuccess'] + response.addedTitles[c]));
@@ -110,6 +135,7 @@ function xhr_call_inpage_result__iggwrurefj(event, notyf, requestedUrl, link, te
 					notyf.alert(linkify(texts['messageResponseError'] + response.errorsUrls[f]));
 				}
 			}
+			notyf.info(texts['messageResponsePending']  + response.pending);
 		} catch (error) {
 			notyf.alert(linkify(texts['messageResponseFailed'] + requestedUrl));
 		}
@@ -127,33 +153,37 @@ if (typeof browser !== 'undefined' && browser && typeof browser.i18n !== 'undefi
 		'messageResponseSuccess': browser.i18n.getMessage("messageResponseSuccess"),
 		'messageResponseSkipped': browser.i18n.getMessage("messageResponseSkipped"),
 		'messageResponseError': browser.i18n.getMessage("messageResponseError"),
-		'messageResponseFailed': browser.i18n.getMessage("messageResponseFailed")
+		'messageResponseFailed': browser.i18n.getMessage("messageResponseFailed"),
+		'messageResponsePending': browser.i18n.getMessage("messageResponsePending")
 	};
-} else if (window.location.hostname === 'dl.piskvor.org') {
-	xhr_call_inpage__iggwrurefj('/downloader/Download_through_downloader/_locales/cs/messages.json',
-		function(event) {
-			if (event.target && event.target.readyState === 4) {
-				try {
-					var response = JSON.parse(event.target.responseText);
-					for (var prop in response) {
-						if (response.hasOwnProperty(prop) && prop.indexOf('message') === 0) {
-							texts[prop] = response[prop].message;
-						}
-					}
-				} catch (error) {
-					// noop
-				}
-			}
-		}
-	);
 } else {
     texts = {
-        'messageRequestStarting': 'start...',
-        'messageResponseSuccess': 'ok',
-        'messageResponseSkipped': 'skip',
-        'messageResponseError': 'error',
-        'messageResponseFailed': 'failed'
+        'messageRequestStarting': 'start: ',
+        'messageResponseSuccess': 'ok: ',
+        'messageResponseSkipped': 'skip: ',
+        'messageResponseError': 'error: ',
+        'messageResponseFailed': 'failed: ',
+        'messageResponsePending': 'pending: '
     };
+
+	if (window.location.hostname === 'dl.piskvor.org') {
+        xhr_call_inpage__iggwrurefj('/downloader/Download_through_downloader/_locales/cs/messages.json',
+            function(event) {
+                if (event.target && event.target.readyState === 4) {
+                    try {
+                        var response = JSON.parse(event.target.responseText);
+                        for (var prop in response) {
+                            if (response.hasOwnProperty(prop) && prop.indexOf('message') === 0) {
+                                texts[prop] = response[prop].message;
+                            }
+                        }
+                    } catch (error) {
+                        // noop
+                    }
+                }
+            }
+        );
+    }
 }
 
 if (typeof browser !== 'undefined' && browser) {
@@ -223,4 +253,8 @@ if (typeof browser !== 'undefined' && browser) {
             }
         });
     }
+
+    if(typeof(window['osm_piskvor_org_loaded__iggwrurefj']) === 'function') {
+        osm_piskvor_org_loaded__iggwrurefj(osm_piskvor_org_share__iggwrurefj);
+	}
 }

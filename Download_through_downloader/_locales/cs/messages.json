@@ -28,6 +28,10 @@
     "message": "Chyba: ",
     "description": "Message shown when request was understood, but the URL is problematic, e.g. not downloadable."
   },
+  "messageResponsePending": {
+    "message": "Ve frontě: ",
+    "description": "Message shown for number of pending (not done and not failed) requests."
+  },
   "messageResponseFailed": {
     "message": "Nepodařilo se zařadit do fronty: ",
     "description": "Message shown when request failed or failed parsing response."
