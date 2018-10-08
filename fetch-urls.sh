@@ -3,8 +3,6 @@
 export LANG=C
 set -euxo pipefail
 
-JMA_SP="3f3c8580de2c25a813d62439c58d6d3c"
-MAJA_SP=""
 BN="threepio download"
 FILES_DIR="files/"
 TMP_DIR="tmp/"
@@ -16,6 +14,11 @@ DIR_NAME=$(pwd)
 
 if [ -f "$DIR_NAME/set_proxy.sh" ]; then
     source "$DIR_NAME/set_proxy.sh"
+fi
+
+SP_IDS=""
+if [ -f "$DIR_NAME/sp_ids" ]; then
+    source "$DIR_NAME/sp_ids"
 fi
 
 MY_PID=$$
@@ -159,7 +162,7 @@ for i in $ROWS ; do
 		SOME_SUCCESS=1
 
 	MESSAGE=$(sqlite3 $SQLITE_DB "SELECT filename FROM files WHERE Id=${ID}") 
-	for sp in ${JMA_SP} ${MAJA_SP}; do
+	for sp in $SP_IDS; do
 	  /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
 	done
 
