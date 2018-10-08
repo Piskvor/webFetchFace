@@ -233,3 +233,14 @@ function getVideoInfo($ffprobe, $id, $videoFilename, $tmpdir) {
 function getResizeCommand($ffmpeg, $startSeconds, $remainingSeconds, $fpn, $bigThumbnailWidth, $bigThumbnailHeight, $newThumbName) {
 	return $ffmpeg . ' -ss ' . $startSeconds . ' -t ' . $remainingSeconds . ' -i "' . $fpn . '" -vf "thumbnail,scale=' . $bigThumbnailWidth . ':' . $bigThumbnailHeight .'" -frames:v 1 -vsync vfr -vf fps=fps=1/600 "' . $newThumbName . '" -y';
 }
+
+/**
+ * @param $row
+ * @return string
+ */
+function getOutFileName($row)
+{
+    return dirname($row['MetadataFileName']).DIRECTORY_SEPARATOR
+        .$row['Id'].'.out.txt';
+}
+

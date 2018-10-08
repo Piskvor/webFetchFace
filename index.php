@@ -97,6 +97,10 @@ if (!empty($doAction) && $doAction !== 'list') {
 	$urlAdded = array();
 	$urlSkipped = array();
 	$urlErrors = array();
+    $actionResult = array(
+        'result' => 'OK'
+    );
+    
 	if ($action === 'add') {
 		$now = date($sqlDate);
 
@@ -236,7 +240,7 @@ if (!empty($doAction) && $doAction !== 'list') {
                                 $thumbFilePath = $thumbPath.DIRECTORY_SEPARATOR
                                     .$thumbFileName;
                             }
-                            $duplicateId = 0;
+                            $duplicateId = null;
                             $prepFindDuplicate->bindColumn('duplicate', $duplicateId);
                             $prepFindDuplicate->execute(array(
                                 $jsonData['extractor'],
@@ -252,7 +256,7 @@ if (!empty($doAction) && $doAction !== 'list') {
                             }
 
                             $prepStatusJson = $db->prepare(
-                                'UPDATE files SET FileStatus=?, FileName=?, DisplayId=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
+                                'UPDATE files SET FileStatus=?, FileName=?, DisplayId=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=?, DuplicateFor=? WHERE Id=?'
                             );
                             $prepStatusJson->execute(
                                 array(
@@ -266,6 +270,8 @@ if (!empty($doAction) && $doAction !== 'list') {
                                     $jsonData['id'],
                                     $now,
                                     $now,
+                                    $duplicateId,
+
                                     $id
                                 )
                             );
@@ -334,42 +340,50 @@ if (!empty($doAction) && $doAction !== 'list') {
         $prepStatus->execute(
             array(DownloadStatus::STATUS_DISCARDED, $requestId)
         );
+    } elseif ($action === 'tail' && $requestId) {
+
+        $resultTailRequest = $db->query(
+            'SELECT * FROM files WHERE Id = ' . (int) $requestId
+        );
+        $rowTailRequest = $resultTailRequest->fetch();
+        $outfile = getOutFileName($rowTailRequest);
+        $tail = '';
+        @exec('tr "\r" "\n" < ' . escapeshellarg($outfile) . ' | tail -n 1', $tail);
+        $actionResult['tail'] = reset($tail);
+
     } elseif ($action === 'retry' && $requestId) {
         $prepStatus->execute(
             array(DownloadStatus::STATUS_QUEUED, $requestId)
         );
 	}
 	if ($isScript) {
-		$result = array(
-			'result' => 'OK'
-		);
-
+		
         $runningCount = 0;
         $prepFindRunning->bindColumn('running', $runningCount);
         $prepFindRunning->execute();
         $prepFindRunning->fetch();
 
-        $result['added'] = count($titleAdded);
-		$result['addedTitles'] = $titleAdded;
-		$result['addedUrls'] = $urlAdded;
-		$result['skipped'] = count($urlSkipped);
-		$result['skippedUrls'] = $urlSkipped;
-		$result['errors'] = count($urlErrors);
-		$result['errorsUrls'] = $urlErrors;
-		$result['pending'] = $runningCount;
+        $actionResult['added'] = count($titleAdded);
+		$actionResult['addedTitles'] = $titleAdded;
+		$actionResult['addedUrls'] = $urlAdded;
+		$actionResult['skipped'] = count($urlSkipped);
+		$actionResult['skippedUrls'] = $urlSkipped;
+		$actionResult['errors'] = count($urlErrors);
+		$actionResult['errorsUrls'] = $urlErrors;
+		$actionResult['pending'] = $runningCount;
 
 		if ($plaintext) {
             xheader('Content-Type: text/plain');
             $resultText = null;
-            if ($result['skipped'] || $result['errors'] || !$result['added']) {
-                echo $result['added'] . ' added,' . $result['skipped'] . ' skipped,' . $result['errors'] . ' errors,' . $runningCount . ' pending.';
+            if ($actionResult['skipped'] || $actionResult['errors'] || !$actionResult['added']) {
+                echo $actionResult['added'] . ' added,' . $actionResult['skipped'] . ' skipped,' . $actionResult['errors'] . ' errors,' . $runningCount . ' pending.';
             } else {
-                echo 'OK: ' . $result['added'] . ' added. ' . $runningCount . ' pending.';
+                echo 'OK: ' . $actionResult['added'] . ' added. ' . $runningCount . ' pending.';
             }
             echo $resultText;
         } else {
             xheader('Content-Type: application/json');
-            echo json_encode($result);
+            echo json_encode($actionResult);
         }
 	} else {
 		xheader('Location: ?do=list');
@@ -497,13 +511,15 @@ foreach ($result as $row) {
 			. DownloadStatus::getTextStatus($row['FileStatus']) . '</a>';
 	} else {
 		print DownloadStatus::getTextStatus($row['FileStatus']);
+		if ($row['FileStatus'] == DownloadStatus::STATUS_DOWNLOADING) {
+		    print ' <span class="dl-tail"></span>';
+        }
 	}
 	print '</td>';
 
 	print '<td class="rowDate"';
 	if ($row['FileStatus'] == DownloadStatus::STATUS_FINISHED || $row['FileStatus'] == DownloadStatus::STATUS_DOWNLOADING || DownloadStatus::isError($row['FileStatus'])) {
-		$outfile = dirname($row['MetadataFileName']) . DIRECTORY_SEPARATOR
-			. $row['Id'] . '.out.txt';
+		$outfile = getOutFileName($row);
 		if (file_exists($outfile)) {
 			print ' data-outfilename="' . $outfile . '"';
 		}

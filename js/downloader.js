@@ -53,7 +53,13 @@ $(document).ready(function () {
 		if (md) {
 			window.open(md);
 		}
-	});
+	}).on('click', function (clickEvt) {
+        var $rs = $(clickEvt.target);
+        var id = $rs.parent().data('id');
+        $.getJSON('?do=tail&isScript=1&id=' + id,null,function (data) {
+			$rs.find('.dl-tail').text(data.tail);
+        })
+    });
 	$('.rowDate').on('dblclick touchend', function (dblClickEvt) {
 		var $rs = $(dblClickEvt.currentTarget);
 		var md = $rs.data('outfilename');
