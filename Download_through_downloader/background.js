@@ -146,64 +146,81 @@ if (typeof browser !== 'undefined' && browser && typeof browser.i18n !== 'undefi
 			}
 		}
 	);
+} else {
+    texts = {
+        'messageRequestStarting': 'start...',
+        'messageResponseSuccess': 'ok',
+        'messageResponseSkipped': 'skip',
+        'messageResponseError': 'error',
+        'messageResponseFailed': 'failed'
+    };
 }
 
-if (typeof browser !== 'undefined' && browser && typeof browser.browserAction !== 'undefined') {
+if (typeof browser !== 'undefined' && browser) {
 
-	const downloaderLink = "https://dl.piskvor.org/downloader/";
+	var downloaderLink = "https://dl.piskvor.org/downloader/";
 
-	browser.browserAction.onClicked.addListener(function () {
-		browser.tabs.create({
-			url: downloaderLink,
-			active: true
-		});
-	});
-	// actually sends the request out - by opening a new tab
-	function osm_piskvor_org_share(e) {
-		// we need to hard-code this, downloader doesn't let us configure
-		const downloaderUrl = downloaderLink + "?do=add&isScript=1";
+    // actually sends the request out - by an XHR request, with Notyf-ication
+    function osm_piskvor_org_share__iggwrurefj(e, isExtension) {
+        // we need to hard-code this, downloader doesn't let us configure
+        var downloaderUrl = downloaderLink + "?do=add&isScript=1";
 
-		var url;
-		if (typeof(e["target"]) === "undefined") {
-			url = e.toString();
-		} else {
-			url = e.target.getAttribute("url");
+        var url;
+        if (typeof(e["target"]) === "undefined") {
+            url = e.toString();
+        } else {
+            url = e.target.getAttribute("url");
+        }
+        var loadUrl = url;
+        if (url.indexOf(downloaderUrl) === -1) { // 80/20 try to avoid loops - calling /loadUrl=http://localhost/loadUrl
+            loadUrl = downloaderUrl + "&urls=" + encodeURIComponent(url);
+        }
+
+        var codeToRun = "!function(){ " + notyf_setup_inpage__iggwrurefj.toString() + ";" + xhr_call_inpage__iggwrurefj.toString() + ";" + xhr_call_inpage_result__iggwrurefj.toString() + /* define the functions in page... */
+            ";var notyf=notyf_setup_inpage__iggwrurefj(); notyf.info(" + JSON.stringify(texts.messageRequestStarting + ' ' + url) + "); xhr_call_inpage__iggwrurefj('" + loadUrl + "',function(e){xhr_call_inpage_result__iggwrurefj(e, notyf, '" + url + "','" + downloaderLink + "'," + JSON.stringify(texts) + "), true})}();" /* ...and call them */;
+
+        if (isExtension) {
+            var insertingCSS = browser.tabs.insertCSS({file: "notyf.css"});
+
+            browser.tabs.executeScript({
+                code: codeToRun
+            });
+        } else {
+			eval(codeToRun);
 		}
-		var loadUrl = url;
-		if (url.indexOf(downloaderUrl) === -1) { // 80/20 try to avoid loops - calling /loadUrl=http://localhost/loadUrl
-			loadUrl = downloaderUrl + "&urls=" + encodeURIComponent(url);
-		}
-		var insertingCSS = browser.tabs.insertCSS({file: "notyf.css"});
+    }
 
-		browser.tabs.executeScript({
-			code: "!function(){ " + notyf_setup_inpage__iggwrurefj.toString() + ";" + xhr_call_inpage__iggwrurefj.toString() + ";" + xhr_call_inpage_result__iggwrurefj.toString() + /* define the functions in page... */
-			";var notyf=notyf_setup_inpage__iggwrurefj(); notyf.info(" + JSON.stringify(texts.messageRequestStarting + ' ' + url) + "); xhr_call_inpage__iggwrurefj('" + loadUrl + "',function(e){xhr_call_inpage_result__iggwrurefj(e, notyf, '" + url + "','" + downloaderLink + "'," + JSON.stringify(texts) + "), true})}();" /* ...and call them */
-		});
-	}
+    if (typeof browser.browserAction !== 'undefined') {
+        browser.browserAction.onClicked.addListener(function () {
+            browser.tabs.create({
+                url: downloaderLink,
+                active: true
+            });
+        });
 
-	// create the context menu item
-	browser.contextMenus.create({
-		id: "osm-piskvor-org-dl-remote-link",
-		title: browser.i18n.getMessage("contextMenuItemOpenInDownloader"),
-		contexts: ["selection", "link", "page"]
-	});
+        // create the context menu item
+        browser.contextMenus.create({
+            id: "osm-piskvor-org-dl-remote-link",
+            title: browser.i18n.getMessage("contextMenuItemOpenInDownloader"),
+            contexts: ["selection", "link", "page"]
+        });
 
-	// handle context menu click
-	browser.contextMenus.onClicked.addListener(function (info) {
-		// we only care about our one item
-		if (info.menuItemId !== "osm-piskvor-org-dl-remote-link") {
-			return;
-		}
-		if (info["selectionText"]) {
-			// if there's a selection, load that
-			osm_piskvor_org_share(info.selectionText);
-		} else if (info["linkUrl"]) {
-			// if there's a link, load that
-			osm_piskvor_org_share(info.linkUrl);
-		} else {
-			// otherwise load the current page URL
-			osm_piskvor_org_share(info.pageUrl);
-		}
-	});
-
+        // handle context menu click
+        browser.contextMenus.onClicked.addListener(function (info) {
+            // we only care about our one item
+            if (info.menuItemId !== "osm-piskvor-org-dl-remote-link") {
+                return;
+            }
+            if (info["selectionText"]) {
+                // if there's a selection, load that
+                osm_piskvor_org_share__iggwrurefj(info.selectionText, true);
+            } else if (info["linkUrl"]) {
+                // if there's a link, load that
+                osm_piskvor_org_share__iggwrurefj(info.linkUrl, true);
+            } else {
+                // otherwise load the current page URL
+                osm_piskvor_org_share__iggwrurefj(info.pageUrl, true);
+            }
+        });
+    }
 }
