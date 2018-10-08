@@ -91,7 +91,7 @@ $prepMetadataAttempts = $db->prepare(
 );
 
 if (!empty($doAction) && $doAction !== 'list') {
-	
+
 	$action = $doAction;
 	$titleAdded = array();
 	$urlAdded = array();
@@ -180,6 +180,7 @@ if (!empty($doAction) && $doAction !== 'list') {
 				continue;
 			}
 			$jsonFilename = $dir . DIRECTORY_SEPARATOR . $id . '.json';
+			$jsonFilenameLog = $dir . DIRECTORY_SEPARATOR . $id . '.json.log';
 			if ($parsingResult === DownloadStatus::STATUS_NEW) {
 
 				$prepMetadataAttempts->execute(
@@ -192,13 +193,14 @@ if (!empty($doAction) && $doAction !== 'list') {
 				$ytdResult = -1;
 
 				if ($isPlaylist) {
-                    exec(
-                        $ytd.' --yes-playlist --ignore-errors --flat-playlist --dump-json'." '".$url."' > "
-                        .$jsonFilename,
+                    $command = $ytd.' --yes-playlist --ignore-errors --flat-playlist --dump-json'." '".$url."' > "
+                    .$jsonFilename . ' 2>> ' . $jsonFilenameLog;
+                    @exec(
+                        $command,
                         $output,
                         $ytdResult
                     );
-                    @chmod($jsonFilename, 0777);
+                    @chmod($jsonFilename, 0766);
                     @chgrp($jsonFilename, 'honza');
                     if (file_exists($jsonFilename) && filesize($jsonFilename) > 0) {
                         $prepStatus->execute(
@@ -213,13 +215,14 @@ if (!empty($doAction) && $doAction !== 'list') {
                     }
                 } else {
 				    // single file
-                    exec(
-                        $ytd.' --dump-json'." '".$url."' > "
-                        .$jsonFilename,
+                    $command = $ytd.' --dump-json'." '".$url."' > "
+                        .$jsonFilename . ' 2>> ' . $jsonFilenameLog;
+                    @exec(
+                        $command,
                         $output,
                         $ytdResult
                     );
-                    @chmod($jsonFilename, 0777);
+                    @chmod($jsonFilename, 0766);
                     @chgrp($jsonFilename, 'honza');
 
                     if (file_exists($jsonFilename)) {
@@ -233,7 +236,6 @@ if (!empty($doAction) && $doAction !== 'list') {
                                 $thumbFilePath = $thumbPath.DIRECTORY_SEPARATOR
                                     .$thumbFileName;
                             }
-
                             $duplicateId = 0;
                             $prepFindDuplicate->bindColumn('duplicate', $duplicateId);
                             $prepFindDuplicate->execute(array(
@@ -322,6 +324,10 @@ if (!empty($doAction) && $doAction !== 'list') {
                         $urlErrors[] = $url;
                     }
                 }
+                file_put_contents($jsonFilenameLog, $command . "\n", FILE_APPEND);
+                file_put_contents($jsonFilenameLog, $output, FILE_APPEND);
+                @chmod($jsonFilenameLog, 0664);
+                @chgrp($jsonFilenameLog, 'honza');
 			}
 		}
 	} elseif ($action === 'delete' && $requestId) {

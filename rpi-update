@@ -1,0 +1,1 @@
+PONG=$(/bin/ping -c5 rpi 2>&1| /bin/grep transmitted -A1);if [ $(echo "$PONG" | /bin/grep -v " 0") ] ;  then  echo "$PONG" | /usr/bin/logger -t rpi;  fi;

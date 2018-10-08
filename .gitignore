@@ -1,3 +1,4 @@
+.idea/*
 downloads*
 files
 tmp/*
@@ -5,3 +6,4 @@ include/apikey.php
 include/dirs.php
 css/downloader.css
 set_proxy.sh
+sp_ids

@@ -55,6 +55,7 @@ echo -n ''>$DIR_NAME/downloads.list
 cd $DIR_NAME
 # lock the queued files to our pid
 sqlite3 $SQLITE_DB "UPDATE files SET DownloaderPid=${MY_PID},FileStatus=3 WHERE FileStatus=2 OR (FileStatus=3 and DownloaderPid IS NULL)"
+ #AND DownloaderPid IS NULL"
 
 cd $DIR_NAME/$FILES_DIR
 
