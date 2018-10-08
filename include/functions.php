@@ -54,7 +54,7 @@ function getSanitizedName($displayId, $title, $fileName) {
 	$convertedName =	trim($title);
 //	$convertedName = str_replace('-', '-',$convertedName);
 	$convertedName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $convertedName);
-	$convertedName = str_replace('_-_', '-',$convertedName);
+	$convertedName = str_replace('_+-+_+', '-',$convertedName);
 	$convertedName = preg_replace('/[^\w_-]+/','_', $convertedName);
 	$convertedName = preg_replace('/_+/','_', $convertedName);
 	$convertedName .=  '-' . $displayId . $ext;

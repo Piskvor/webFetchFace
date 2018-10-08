@@ -9,6 +9,7 @@ class DownloadStatus
     const STATUS_DOWNLOADING_METADATA = 1; // currently being evaluated; go to 2 or fail to 901
     const STATUS_METADATA_ERROR = 901; // invalid metadata received; FAIL
     const STATUS_QUEUED = 2; // metadata received correctly, ready to download; go to 3
+    const STATUS_DUPLICATE = 902; // item already queued earlier
     const STATUS_PREDOWNLOAD = 3; // currently preparing for download; go to 4
     const STATUS_DOWNLOADING = 4; // currently being downloaded; go to 5 or 100 or fail to 904
     const STATUS_ERROR = 904; // download error; FAIL
@@ -24,6 +25,7 @@ class DownloadStatus
         1 => 'Ověřují se data',
         901 => 'Chyba ověření dat',
         2 => 'Čeká na stažení',
+        902 => 'Duplicitní',
         3 => 'Brzy začne stahování',
         4 => 'Stahuje se',
         5 => 'Konvertuje se na MP3',

@@ -76,6 +76,9 @@ $db = new DbConnection($filesDb);
 $prepFindUrl = $db->prepare(
 	'SELECT Id,FileStatus FROM files WHERE Url=? AND FileStatus <= 100'
 );
+$prepFindDuplicate = $db->prepare(
+	'SELECT Id AS duplicate FROM files WHERE Extractor=? AND DomainId = ? AND Id != ? ORDER BY Id ASC'
+);
 $prepFindRunning = $db->prepare(
 	'SELECT COUNT(Id) AS running FROM files WHERE FileStatus <= 4'
 );
@@ -230,12 +233,28 @@ if (!empty($doAction) && $doAction !== 'list') {
                                 $thumbFilePath = $thumbPath.DIRECTORY_SEPARATOR
                                     .$thumbFileName;
                             }
+
+                            $duplicateId = 0;
+                            $prepFindDuplicate->bindColumn('duplicate', $duplicateId);
+                            $prepFindDuplicate->execute(array(
+                                $jsonData['extractor'],
+                                $jsonData['id'],
+                                $id
+                            ));
+                            $prepFindDuplicate->fetch();
+                            if ($duplicateId > 0) {
+                                $downloadStatus = DownloadStatus::STATUS_DUPLICATE;
+                                $urlSkipped[] = $url;
+                            } else {
+                                $downloadStatus = DownloadStatus::STATUS_QUEUED;
+                            }
+
                             $prepStatusJson = $db->prepare(
                                 'UPDATE files SET FileStatus=?, FileName=?, DisplayId=?, Title=?, Duration=?, Extractor=?, ThumbFileName=?, DomainId=?, MetadataDownloadedAt=?, QueuedAt=? WHERE Id=?'
                             );
                             $prepStatusJson->execute(
                                 array(
-                                    DownloadStatus::STATUS_QUEUED,
+                                    $downloadStatus,
                                     $jsonData['_filename'],
                                     getDisplayId($jsonData),
                                     $jsonData['title'],
