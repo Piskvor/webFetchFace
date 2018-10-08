@@ -9,11 +9,11 @@ $ffprobe = $dn . DIRECTORY_SEPARATOR . 'ffprobe';
 
 $filesDb = 'downloads.sqlite';
 $relDir = 'tmp';
-$ytd = '/home/honza/bin/youtube-dl '
-	. '--restrict-filenames '
-	. '--proxy=http://192.168.30.3:8888'
-	. '--prefer-ffmpeg '
-	. '--ffmpeg-location ' . $dn ;
+$ytd = '/home/honza/bin/youtube-dl'
+	. ' --restrict-filenames'
+	. ' --proxy=http://192.168.30.3:8888'
+	. ' --prefer-ffmpeg'
+	. ' --ffmpeg-location ' . $dn ;
 
 $thumbnailWidth = 120;
 $bigThumbnailWidth = 800;
