@@ -74,7 +74,11 @@ try {
 $db = new DbConnection($filesDb);
 
 $prepFindUrl = $db->prepare(
-	'SELECT Id,FileStatus FROM files WHERE Url=? AND FileStatus <= 100'
+        'SELECT Id,FileStatus FROM files WHERE Url=? AND FileStatus <= 100'
+);
+
+$prepGetStatus = $db->prepare(
+	'SELECT FileStatus, ForceProcessing FROM files WHERE Id=?'
 );
 $prepFindDuplicate = $db->prepare(
 	'SELECT Id AS duplicate FROM files WHERE Extractor=? AND DomainId = ? AND Id != ? ORDER BY Id ASC'
@@ -83,12 +87,16 @@ $prepFindRunning = $db->prepare(
 	'SELECT COUNT(Id) AS running FROM files WHERE FileStatus <= 4'
 );
 $prepStatus = $db->prepare('UPDATE files SET FileStatus=? WHERE Id=?');
+$prepForceStatus = $db->prepare('UPDATE files SET FileStatus=?, ForceProcessing=? WHERE Id=?');
 $prepAttempts = $db->prepare(
 	'UPDATE files SET DownloadAttempts=DownloadAttempts+1 WHERE Id=?'
 );
 $prepMetadataAttempts = $db->prepare(
 	'UPDATE files SET FileStatus=?, MetadataFileName=?, MetadataAttempts=MetadataAttempts+1 WHERE Id=?'
 );
+
+$now = date($sqlDate);
+
 
 if (!empty($doAction) && $doAction !== 'list') {
 
@@ -102,7 +110,6 @@ if (!empty($doAction) && $doAction !== 'list') {
     );
     
 	if ($action === 'add') {
-		$now = date($sqlDate);
 
 		$prepNew = $db->prepare(
 			'INSERT INTO files (Url, UrlDomain, CreatedAt, FileStatus, IsPlaylist) VALUES (?,?,?,?,?)'
@@ -233,7 +240,6 @@ if (!empty($doAction) && $doAction !== 'list') {
                         $jsonData = getJsonFile($jsonFilename);
                         $thumbFileName = null;
                         if (count($jsonData) > 0) {
-                            $now = date($sqlDate);
                             if (!empty($jsonData['thumbnail'])) {
                                 $thumbFileName = getThumbName($id, $jsonData['id'], $jsonData['thumbnail']);
                                 $thumbPath = $relDir.DIRECTORY_SEPARATOR.$host;
@@ -241,13 +247,25 @@ if (!empty($doAction) && $doAction !== 'list') {
                                     .$thumbFileName;
                             }
                             $duplicateId = null;
-                            $prepFindDuplicate->bindColumn('duplicate', $duplicateId);
-                            $prepFindDuplicate->execute(array(
-                                $jsonData['extractor'],
-                                $jsonData['id'],
+                            $forceProcessing = null;
+                            $prepGetStatus->bindColumn('ForceProcessing', $forceProcessing);
+                            $prepGetStatus->execute(array(
                                 $id
                             ));
-                            $prepFindDuplicate->fetch();
+                            $prepGetStatus->fetch();
+
+                            if ($forceProcessing === null) {
+                                $prepFindDuplicate->bindColumn('duplicate', $duplicateId);
+                                $prepFindDuplicate->execute(
+                                    array(
+                                        $jsonData['extractor'],
+                                        $jsonData['id'],
+                                        $id
+                                    )
+                                );
+                                $prepFindDuplicate->fetch();
+                            }
+
                             if ($duplicateId > 0) {
                                 $downloadStatus = DownloadStatus::STATUS_DUPLICATE;
                                 $urlSkipped[] = $url;
@@ -352,8 +370,12 @@ if (!empty($doAction) && $doAction !== 'list') {
         $actionResult['tail'] = reset($tail);
 
     } elseif ($action === 'retry' && $requestId) {
-        $prepStatus->execute(
-            array(DownloadStatus::STATUS_QUEUED, $requestId)
+        $prepForceStatus->execute(
+            array(
+                    DownloadStatus::STATUS_QUEUED,
+                    $now,
+                    $requestId
+            )
         );
 	}
 	if ($isScript) {
