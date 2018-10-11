@@ -43,7 +43,7 @@ foreach ($result as $row) {
 			$thumbnailWidth, $uploadDir, $moveToDir, $prefix = '_tiny'
 		);
 		echo "New thumbnail: ", $newTTN, "\n";
-	} else if (file_exists($fpn)) {
+	} else if (file_exists($fpn) && !is_dir($fpn)) {
 		$dir = $relDir . DIRECTORY_SEPARATOR . $host;
 		$aspectRatio = getAspectRatio($ffprobe, $id,$fpn,$dir);
 		$bigThumbnailHeight = floor( $bigThumbnailWidth / $aspectRatio);
@@ -109,7 +109,7 @@ foreach ($result as $row) {
 		}
 		$filename = $foundFile;
 	}
-	if (!$filename) {
+	if (!$filename || is_dir($filename)) {
 		echo "no candidates: $filePathOld\n";
 		continue;
 	}
@@ -135,8 +135,8 @@ foreach ($result as $row) {
 	$newFilename = getSanitizedName($did,$row['Title'],$filename);
 	$newFilenamePath = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR . $newFilename);
 
-	if ($filename != $newFilenamePath) {
-		if(rename($filename,$newFilenamePath)) {
+	if ($filename !== $newFilenamePath) {
+		if(!is_dir($filename) && rename($filename,$newFilenamePath)) {
 			$prepConverted->execute(array($newFilename,$id));
 			echo "rename: $filename -> $newFilenamePath\n";
 		} else {
@@ -167,7 +167,7 @@ foreach ($result as $row) {
 			if (is_dir($newdir)) {
 				$newfilename = str_replace('_-_','-', preg_replace('~/+~', '/',$newdir . DIRECTORY_SEPARATOR . $filename));
 				$oldfilename = preg_replace('~/+~', '/',$filepath . DIRECTORY_SEPARATOR . $filename);
-				if (rename($oldfilename,$newfilename)) {
+				if (!is_dir($filename) && rename($oldfilename,$newfilename)) {
 					$prepFilepath->execute(array($newdir,$id));
 				} else if (file_exists($newfilename)) {
 					$prepFilepath->execute(array($newfilename, $id));
