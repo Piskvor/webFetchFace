@@ -68,10 +68,12 @@ if (PHP_SAPI === 'cli') {
     }
     $requestUrls = isset($_REQUEST['urls']) ? $_REQUEST['urls'] : '';
 }
-
+$freeSpace = '?';
 try {
 
 $db = new DbConnection($filesDb);
+
+$freeSpace = (int) (disk_free_space(dirname(realpath($filesDb))) / 1024 / 1024);
 
 $prepFindUrl = $db->prepare(
         'SELECT Id,FileStatus FROM files WHERE Url=? AND FileStatus <= 100'
@@ -439,6 +441,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'include' . DIRECTORY_SEPARATOR
 	</button>
 	<input type="hidden" name="wakaWakaWaka" value="·····•····· ᗤ ᗣᗣᗣᗣ"/>
 	<!-- @Darth Android: https://superuser.com/questions/194195/is-there-a-pac-man-like-character-in-ascii-or-unicode#comment1260666_357916 -->
+    <label><input type="text" readonly="readonly" value="<?php echo $freeSpace ; ?>"> MB volného místa</label>
 </form>
 <div class="ytSearchWrapper">
 	<button class="ytSearchOn" id="ytSearch" style="display: none"><span
