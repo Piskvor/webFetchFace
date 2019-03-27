@@ -30,11 +30,15 @@ if (PHP_SAPI === 'cli') {
         $requestId = null;
 
         $urls = array();
-        if (preg_match('~^https?://~', $argv[2])) {
-            $urlStructure = @parse_url($argv[2]);
+        $url = $argv[2];
+        if (preg_match('~^https?://~', $url)) {
+            $urlStructure = @parse_url($url);
             $scheme = $urlStructure && isset($urlStructure['scheme']) ? strtolower($urlStructure['scheme']) : '';
             if ($scheme === 'http' || $scheme === 'https') {
-                $urls[] = $argv[2];
+                if (preg_match('~^https?://[a-z0-9]+.google.[a-z]+/url?q=([^&]+)~', $url, $matches)) {
+                    $url = urldecode($matches[1]);
+                }
+                $urls[] = $url;
             }
         } else {
             $fileName = realpath(__DIR__.'/'.$argv[2]);
