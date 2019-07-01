@@ -210,7 +210,7 @@ if (typeof browser !== 'undefined' && browser) {
             ";var notyf=notyf_setup_inpage__iggwrurefj(); notyf.info(" + JSON.stringify(texts.messageRequestStarting + ' ' + url) + "); xhr_call_inpage__iggwrurefj('" + loadUrl + "',function(e){xhr_call_inpage_result__iggwrurefj(e, notyf, '" + url + "','" + downloaderLink + "'," + JSON.stringify(texts) + "), true})}();" /* ...and call them */;
 
         if (isExtension) {
-            var insertingCSS = browser.tabs.insertCSS({file: "notyf.css"});
+            browser.tabs.insertCSS({file: "notyf.css"});
 
             browser.tabs.executeScript({
                 code: codeToRun

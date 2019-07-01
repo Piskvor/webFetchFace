@@ -12,7 +12,6 @@ export DIR_NAME=$(dirname $0)
 cd ${DIR_NAME};
 DIR_NAME=$(pwd)
 
-
 HTTP_PROXY=${HTTP_PROXY:-}
 HTTPS_PROXY=${HTTP_PROXY}
 http_proxy=${HTTP_PROXY}
@@ -28,6 +27,8 @@ if [[ -f "$DIR_NAME/sp_ids" ]]; then
 fi
 
 MY_PID=$$
+mkdir -p "$DIR_NAME/$TMP_DIR"
+mkdir -p "$DIR_NAME/$FILES_DIR"
 LOCKFILE="$DIR_NAME/$TMP_DIR/fetch-urls.lock"
 LOGFILE="$DIR_NAME/$TMP_DIR/full.log"
 
@@ -40,34 +41,34 @@ if [[ "$COUNTER" -gt 2 ]]; then
 	exit 3
 fi
 if [[ "$WHAT" != "--run-logged" && "$COUNTER" = 1 ]]; then
-	$0 --run-logged ${COUNTER} 2>&1 | tee -a $LOGFILE
+	$0 --run-logged ${COUNTER} 2>&1 | tee -a ${LOGFILE}
 	exit $?
 fi
 
-exec 9>$LOCKFILE
+exec 9>${LOCKFILE}
 if ! flock -n 9  ; then
 	echo "$$: another instance is running";
 	exit 100
 fi
 echo "running $$"
-touch $LOCKFILE
+touch ${LOCKFILE}
 
 export SQLITE_DB="$DIR_NAME/downloads.sqlite"
-YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location /home/honza/bin --skip-unavailable-fragments --add-metadata --limit-rate=3M --fixup=detect_or_warn'
+YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location $HOME/bin --skip-unavailable-fragments --add-metadata --limit-rate=3M --fixup=detect_or_warn'
 
 if [[ "$http_proxy" != "" ]]; then
     YTD_OPTS="$YTD_OPTS --proxy=$http_proxy"
 fi
 
-cp $DIR_NAME/downloads.list $DIR_NAME/downloads.tmp.list
-echo -n ''>$DIR_NAME/downloads.list
+cp "$DIR_NAME/downloads.list" "$DIR_NAME/downloads.tmp.list"
+echo -n ''>"$DIR_NAME/downloads.list"
 
-cd $DIR_NAME
+cd ${DIR_NAME}
 # lock the queued files to our pid
 sqlite3 ${SQLITE_DB} "UPDATE files SET DownloaderPid=${MY_PID},FileStatus=3 WHERE FileStatus=2 OR (FileStatus=3 and DownloaderPid IS NULL)"
  #AND DownloaderPid IS NULL"
 
-cd $DIR_NAME/$FILES_DIR
+cd "$DIR_NAME/$FILES_DIR"
 
 cleanupDeadDownloads () {
 	PIDS_RUNNING=$(sqlite3 ${SQLITE_DB} 'SELECT DISTINCT DownloaderPid FROM files WHERE FileStatus in(3,4)'||true)
@@ -154,7 +155,7 @@ for i in $ROWS ; do
 	fi
 	OUTFILE="$TMP_URL_DIR/$ID.out.txt"
 
-    COMMAND="/home/honza/bin/youtube-dl $YTD_OPTS $OPTS $URL"
+    COMMAND="$HOME/bin/youtube-dl $YTD_OPTS $OPTS $URL"
 #    echo $COMMAND
 #    exit
     set +e
@@ -173,11 +174,13 @@ for i in $ROWS ; do
 		SOME_SUCCESS=1
 
 	MESSAGE=$(sqlite3 ${SQLITE_DB} "SELECT filename FROM files WHERE Id=${ID}") 
-	for sp in $SP_IDS; do
-	  /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
-	done
+	if [ "$SP_IDS" != "" ]; then
+        for sp in $SP_IDS; do
+          /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
+        done
+	fi
 
-	   continue
+	continue
 
        sqlite3 ${SQLITE_DB} "UPDATE files SET FileStatus=5,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime') WHERE Id=${ID}"
 	MESSAGE=$(sqlite3 ${SQLITE_DB} "SELECT filename FROM files WHERE Id=${ID}") 
@@ -185,7 +188,7 @@ for i in $ROWS ; do
 
         $(
             FILE_NAME=$(sqlite3 ${SQLITE_DB} "SELECT Filename FROM files WHERE Id=${ID}")
-            COMMAND="/home/honza/bin/ffmpeg"
+            COMMAND="$HOME/bin/ffmpeg"
 	    $COMMAND -y -i "${DIR_NAME}/files/${FILE_NAME}" "${DIR_NAME}/files/${FILE_NAME}.mp3"
 #            echo $COMMAND $COMMAND_OPTS
 #            $COMMAND $COMMAND_OPTS
