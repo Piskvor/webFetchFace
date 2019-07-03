@@ -3,15 +3,25 @@
 /** @noinspection UsingInclusionOnceReturnValueInspection */
 @include_once __DIR__ . DIRECTORY_SEPARATOR . 'dirs.php';
 
+// TODO: configurable paths?
 $ffmpeg = '/home/honza/bin/ffmpeg';
+if (!is_executable($ffmpeg)) {
+    // cross our fingers and hope
+    $ffmpeg = 'ffmpeg';
+}
 $dn = dirname($ffmpeg);
 $ffprobe = $dn . DIRECTORY_SEPARATOR . 'ffprobe';
 
+// main database
 $filesDb = 'downloads.sqlite';
 $relDir = 'tmp';
-$ytd = '/home/honza/bin/youtube-dl'
+$ytdlExec = '/home/honza/bin/youtube-dl';
+if (!is_executable($ytdlExec)) {
+    // cross our fingers and hope
+    $ytdlExec = 'youtube-dl';
+}
+$ytd = $ytdlExec
 	. ' --restrict-filenames'
-	. ' --proxy=http://192.168.30.3:8888'
 	. ' --prefer-ffmpeg'
 	. ' --ffmpeg-location ' . $dn ;
 
@@ -29,7 +39,7 @@ if (!function_exists('getDirs')){
 	}
 }
 
-$tz = new DateTimeZone('Europe/Prague');
+$tz = new DateTimeZone(date_default_timezone_get());
 
 function getFilenameParts($fileName, $position=-1) {
 	$name = $fileName;
