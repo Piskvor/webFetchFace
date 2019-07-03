@@ -1,0 +1,39 @@
+{
+  "extensionName": {
+    "message": "dl.piskvor.org",
+    "description": "Name of the extension."
+  },
+  "extensionDescription": {
+    "message": "Queue video downloads.",
+    "description": "Description of the add-on."
+  },
+  "contextMenuItemOpenInDownloader": {
+    "message": "Download via dl.piskvor.org",
+    "description": "Title of context menu item - same for selection/link/page."
+  },
+
+  "messageRequestStarting": {
+    "message": "Sending: ",
+    "description": "Message shown when request is starting."
+  },
+  "messageResponseSuccess": {
+    "message": "Added: ",
+    "description": "Message shown when request was successful."
+  },
+  "messageResponseSkipped": {
+    "message": "Already queued: ",
+    "description": "Message shown when request was understood, but the URL is already queued."
+  },
+  "messageResponseError": {
+    "message": "Error: ",
+    "description": "Message shown when request was understood, but the URL is problematic, e.g. not downloadable."
+  },
+  "messageResponsePending": {
+    "message": "Queued: ",
+    "description": "Message shown for number of pending (not done and not failed) requests."
+  },
+  "messageResponseFailed": {
+    "message": "Failed to add to queue: ",
+    "description": "Message shown when request failed or failed parsing response."
+  }
+}
