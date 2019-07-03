@@ -3,7 +3,7 @@
 export LANG=C
 set -euxo pipefail
 
-BN="threepio download"
+BN="downloader"
 FILES_DIR="files/"
 TMP_DIR="tmp/"
 trap "exit 1" INT
@@ -17,10 +17,12 @@ HTTPS_PROXY=${HTTP_PROXY}
 http_proxy=${HTTP_PROXY}
 https_proxy=${HTTP_PROXY}
 
+# set proxy variables by script, if any
 if [[ -f "$DIR_NAME/set_proxy.sh" ]]; then
     source "$DIR_NAME/set_proxy.sh"
 fi
 
+# pushjet IDs, if any
 SP_IDS=""
 if [[ -f "$DIR_NAME/sp_ids" ]]; then
     source "$DIR_NAME/sp_ids"
@@ -35,7 +37,6 @@ LOGFILE="$DIR_NAME/$TMP_DIR/full.log"
 WHAT=${1:-""}
 COUNTER=${2:-0}
 COUNTER=$(( $COUNTER + 1 ))
-echo $COUNTER
 if [[ "$COUNTER" -gt 2 ]]; then
 	echo "LOOP!"
 	exit 3
@@ -45,6 +46,7 @@ if [[ "$WHAT" != "--run-logged" && "$COUNTER" = 1 ]]; then
 	exit $?
 fi
 
+# do not run multiple instances
 exec 9>${LOCKFILE}
 if ! flock -n 9  ; then
 	echo "$$: another instance is running";
@@ -53,23 +55,38 @@ fi
 echo "running $$"
 touch ${LOCKFILE}
 
+# database file
 export SQLITE_DB="$DIR_NAME/downloads.sqlite"
-YTD_OPTS='--restrict-filenames --prefer-ffmpeg --ffmpeg-location $HOME/bin --skip-unavailable-fragments --add-metadata --limit-rate=3M --fixup=detect_or_warn'
+
+# youtube-dl directory
+YTD="$HOME/bin/youtube-dl"
+if [[ ! -x "$YTD" ]]; then
+    YTD="youtube-dl"
+fi
+
+# ffmpeg directory
+FML="--ffmpeg-location $HOME/bin"
+if [[ ! -x "$HOME/bin/ffmpeg" ]]; then
+    FML=""
+fi
+# youtube-dl options
+YTD_OPTS='--restrict-filenames --prefer-ffmpeg $FML --skip-unavailable-fragments --add-metadata --limit-rate=3M --fixup=detect_or_warn'
 
 if [[ "$http_proxy" != "" ]]; then
     YTD_OPTS="$YTD_OPTS --proxy=$http_proxy"
 fi
 
+# fallback input - read URLs from file
 cp "$DIR_NAME/downloads.list" "$DIR_NAME/downloads.tmp.list"
 echo -n ''>"$DIR_NAME/downloads.list"
 
 cd ${DIR_NAME}
 # lock the queued files to our pid
 sqlite3 ${SQLITE_DB} "UPDATE files SET DownloaderPid=${MY_PID},FileStatus=3 WHERE FileStatus=2 OR (FileStatus=3 and DownloaderPid IS NULL)"
- #AND DownloaderPid IS NULL"
 
 cd "$DIR_NAME/$FILES_DIR"
 
+# if pids no longer exist, clean up
 cleanupDeadDownloads () {
 	PIDS_RUNNING=$(sqlite3 ${SQLITE_DB} 'SELECT DISTINCT DownloaderPid FROM files WHERE FileStatus in(3,4)'||true)
 	echo $PIDS_RUNNING
@@ -90,6 +107,7 @@ cleanupDeadDownloads () {
 
 cleanupDeadDownloads
 
+# get and process playlist files
 ROWS=$(sqlite3 ${SQLITE_DB} "SELECT Id,MetadataFileName FROM files WHERE DownloaderPid=${MY_PID} AND FileStatus=3 AND IsPlaylist=1 ORDER BY PriorityPercent DESC,Id ASC"||true)
 
 IFS=$'\n'
@@ -155,7 +173,7 @@ for i in $ROWS ; do
 	fi
 	OUTFILE="$TMP_URL_DIR/$ID.out.txt"
 
-    COMMAND="$HOME/bin/youtube-dl $YTD_OPTS $OPTS $URL"
+    COMMAND="$YTD $YTD_OPTS $OPTS $URL"
 #    echo $COMMAND
 #    exit
     set +e
@@ -163,23 +181,25 @@ for i in $ROWS ; do
 	chgrp www-data ${OUTFILE}
 	chmod 664 ${OUTFILE}
 	echo $COMMAND >> ${OUTFILE}
+	# this is where the magic actually happens - we call youtube-dl and let it do its thing
     eval $COMMAND >> ${OUTFILE} 2>&1
     RESULT=$?
     echo $RESULT >> ${OUTFILE}
 	date >> ${OUTFILE}
     set -e
     if [[ "$RESULT" -eq 0 || "$RESULT" -eq 127 ]]; then
-
+        # ok, done.
        sqlite3 ${SQLITE_DB} "UPDATE files SET FileStatus=100,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime'),FilePath='${FILES_DIR}' WHERE Id=${ID}"
 		SOME_SUCCESS=1
 
-	MESSAGE=$(sqlite3 ${SQLITE_DB} "SELECT filename FROM files WHERE Id=${ID}") 
+	MESSAGE=$(sqlite3 ${SQLITE_DB} "SELECT filename FROM files WHERE Id=${ID}")
 	if [ "$SP_IDS" != "" ]; then
         for sp in $SP_IDS; do
           /usr/local/bin/pushjet-cli -s "$sp" -t "done" -m "${MESSAGE}" || true
         done
 	fi
 
+# do not convert to audio
 	continue
 
        sqlite3 ${SQLITE_DB} "UPDATE files SET FileStatus=5,DownloaderPid=NULL,DownloadedAt=DATETIME('now', 'localtime') WHERE Id=${ID}"
@@ -205,12 +225,14 @@ for i in $ROWS ; do
 
 done
 
+# fix file names
 set +eu
 $(
     cd ${DIR_NAME} && \
     php set-new-name.php
-)
+) || true
 
+# move downloaded files to respective directories
 if [[ "$SOME_SUCCESS" -gt 0 ]]; then
 	cd ${DIR_NAME} && \
     $(
